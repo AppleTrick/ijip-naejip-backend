@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.home.mapper.HouseDealMapper">
+
+    <resultMap id="HouseDealResultMap" type="com.ssafy.home.dto.HouseDealDto">
+        <id property="no" column="no"/>
+        <result property="aptSeq" column="apt_seq"/>
+        <result property="aptDong" column="apt_dong"/>
+        <result property="floor" column="floor"/>
+        <result property="dealDate" column="deal_date"/>
+        <result property="excluUseAr" column="exclu_use_ar"/>
+        <result property="dealAmount" column="deal_amount"/>
+        <result property="aptNm" column="apt_nm"/>
+        <result property="roadNm" column="road_nm"/>
+        <result property="jibun" column="jibun"/>
+        <result property="buildYear" column="build_year"/>
+        <result property="latitude" column="latitude"/>
+        <result property="longitude" column="longitude"/>
+        <result property="dongCode" column="dong_code"/>
+        <result property="sidoName" column="sido_name"/>
+        <result property="gugunName" column="gugun_name"/>
+        <result property="dongName" column="dong_name"/>
+    </resultMap>
+
+    <select id="selectRecentDealsByDongCode" resultMap="HouseDealResultMap">
+        SELECT
+            hd.no,
+            hd.apt_seq,
+            hd.apt_dong,
+            hd.floor,
+            hd.deal_date,
+            hd.exclu_use_ar,
+            hd.deal_amount,
+            hi.apt_nm,
+            hi.road_nm,
+            hi.jibun,
+            hi.build_year,
+            hi.latitude,
+            hi.longitude,
+            dc.dong_code,
+            dc.sido_name,
+            dc.gugun_name,
+            dc.dong_name
+        FROM housedeals hd
+        INNER JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+        INNER JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+        WHERE dc.dong_code = #{dongCode}
+        ORDER BY hd.deal_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectDealsByAptSeq" resultMap="HouseDealResultMap">
+        SELECT
+            hd.no,
+            hd.apt_seq,
+            hd.apt_dong,
+            hd.floor,
+            hd.deal_date,
+            hd.exclu_use_ar,
+            hd.deal_amount,
+            hi.apt_nm,
+            hi.road_nm,
+            hi.jibun,
+            hi.build_year,
+            hi.latitude,
+            hi.longitude,
+            dc.dong_code,
+            dc.sido_name,
+            dc.gugun_name,
+            dc.dong_name
+        FROM housedeals hd
+        INNER JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+        LEFT JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+        WHERE hd.apt_seq = #{aptSeq}
+        ORDER BY hd.deal_date DESC
+    </select>
+
+    <select id="selectDealByNo" resultMap="HouseDealResultMap">
+        SELECT
+            hd.no,
+            hd.apt_seq,
+            hd.apt_dong,
+            hd.floor,
+            hd.deal_date,
+            hd.exclu_use_ar,
+            hd.deal_amount,
+            hi.apt_nm,
+            hi.road_nm,
+            hi.jibun,
+            hi.build_year,
+            hi.latitude,
+            hi.longitude,
+            dc.dong_code,
+            dc.sido_name,
+            dc.gugun_name,
+            dc.dong_name
+        FROM housedeals hd
+        INNER JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+        LEFT JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+        WHERE hd.no = #{no}
+    </select>
+</mapper>
+

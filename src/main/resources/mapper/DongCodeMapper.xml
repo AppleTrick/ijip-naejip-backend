@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.home.mapper.DongCodeMapper">
+
+    <resultMap id="DongCodeResultMap" type="com.ssafy.home.dto.DongCodeDto">
+        <id property="dongCode" column="dong_code"/>
+        <result property="sidoName" column="sido_name"/>
+        <result property="gugunName" column="gugun_name"/>
+        <result property="dongName" column="dong_name"/>
+    </resultMap>
+
+    <select id="selectAllSido" resultMap="DongCodeResultMap">
+        SELECT DISTINCT sido_name
+        FROM dongcodes
+        WHERE sido_name IS NOT NULL
+        ORDER BY sido_name
+    </select>
+
+    <select id="selectGugunBySido" resultMap="DongCodeResultMap">
+        SELECT DISTINCT sido_name, gugun_name
+        FROM dongcodes
+        WHERE sido_name = #{sidoName}
+          AND gugun_name IS NOT NULL
+        ORDER BY gugun_name
+    </select>
+
+    <select id="selectDongByGugun" resultMap="DongCodeResultMap">
+        SELECT dong_code, sido_name, gugun_name, dong_name
+        FROM dongcodes
+        WHERE sido_name = #{sidoName}
+          AND gugun_name = #{gugunName}
+          AND dong_name IS NOT NULL
+        ORDER BY dong_name
+    </select>
+
+</mapper>
+
