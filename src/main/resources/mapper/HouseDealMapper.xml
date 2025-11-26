@@ -46,8 +46,10 @@
             dc.dong_name
         FROM housedeals hd
         INNER JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
-        INNER JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+        CROSS JOIN dongcodes dc
         WHERE dc.dong_code = #{dongCode}
+          AND hi.sgg_cd = SUBSTRING(#{dongCode}, 1, 5)
+          AND hi.umd_cd = SUBSTRING(#{dongCode}, 6, 5)
         ORDER BY hd.deal_date DESC
         LIMIT #{limit}
     </select>
