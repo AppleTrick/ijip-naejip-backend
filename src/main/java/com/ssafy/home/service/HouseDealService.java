@@ -33,5 +33,12 @@ public class HouseDealService {
     public HouseDealDto getDealByNo(Integer no) {
         return houseDealMapper.selectDealByNo(no);
     }
+
+    /**
+     * 지도 영역(Bounds) 내의 거래 내역 조회
+     */
+    public List<HouseDealDto> getHouseDealsByBounds(double minLat, double maxLat, double minLng, double maxLng, int limit) {
+        return houseDealMapper.selectHouseDealsByBounds(minLat, maxLat, minLng, maxLng, limit);
+    }
 }
 

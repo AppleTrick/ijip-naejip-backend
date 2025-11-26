@@ -31,5 +31,20 @@ public interface HouseDealMapper {
      * @return 거래 내역
      */
     HouseDealDto selectDealByNo(@Param("no") Integer no);
+
+    /**
+     * 지도 영역(Bounds) 내의 거래 내역 조회
+     * @param minLat 최소 위도
+     * @param maxLat 최대 위도
+     * @param minLng 최소 경도
+     * @param maxLng 최대 경도
+     * @param limit 조회할 최대 개수
+     * @return 거래 내역 목록
+     */
+    List<HouseDealDto> selectHouseDealsByBounds(@Param("minLat") double minLat,
+                                                @Param("maxLat") double maxLat,
+                                                @Param("minLng") double minLng,
+                                                @Param("maxLng") double maxLng,
+                                                @Param("limit") int limit);
 }
 

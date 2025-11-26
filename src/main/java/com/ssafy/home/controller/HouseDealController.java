@@ -61,5 +61,21 @@ public class HouseDealController {
         log.info("거래 상세 조회 완료 - no: {}", no);
         return ResponseEntity.ok(deal);
     }
+    /**
+     * 지도 영역(Bounds) 내의 거래 내역 조회
+     * GET /api/house/deals/bounds?minLat=...&maxLat=...&minLng=...&maxLng=...
+     */
+    @GetMapping("/deals/bounds")
+    public ResponseEntity<List<HouseDealDto>> getDealsByBounds(
+            @RequestParam("minLat") double minLat,
+            @RequestParam("maxLat") double maxLat,
+            @RequestParam("minLng") double minLng,
+            @RequestParam("maxLng") double maxLng,
+            @RequestParam(value = "limit", defaultValue = "100") int limit) {
+        log.info("지도 영역별 거래 내역 조회 요청 - minLat: {}, maxLat: {}, minLng: {}, maxLng: {}, limit: {}", minLat, maxLat, minLng, maxLng, limit);
+        List<HouseDealDto> deals = houseDealService.getHouseDealsByBounds(minLat, maxLat, minLng, maxLng, limit);
+        log.info("지도 영역별 거래 내역 조회 완료: {} 개", deals.size());
+        return ResponseEntity.ok(deals);
+    }
 }
 

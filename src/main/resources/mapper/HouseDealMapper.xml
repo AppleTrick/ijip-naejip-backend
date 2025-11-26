@@ -104,5 +104,33 @@
         LEFT JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
         WHERE hd.no = #{no}
     </select>
+
+    <select id="selectHouseDealsByBounds" resultMap="HouseDealResultMap">
+        SELECT
+            hd.no,
+            hd.apt_seq,
+            hd.apt_dong,
+            hd.floor,
+            hd.deal_date,
+            hd.exclu_use_ar,
+            hd.deal_amount,
+            hi.apt_nm,
+            hi.road_nm,
+            hi.jibun,
+            hi.build_year,
+            hi.latitude,
+            hi.longitude,
+            dc.dong_code,
+            dc.sido_name,
+            dc.gugun_name,
+            dc.dong_name
+        FROM housedeals hd
+        INNER JOIN houseinfos hi ON hd.apt_seq = hi.apt_seq
+        LEFT JOIN dongcodes dc ON CONCAT(hi.sgg_cd, hi.umd_cd) = dc.dong_code
+        WHERE hi.latitude BETWEEN #{minLat} AND #{maxLat}
+          AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+        ORDER BY hd.deal_date DESC
+        LIMIT #{limit}
+    </select>
 </mapper>
 
