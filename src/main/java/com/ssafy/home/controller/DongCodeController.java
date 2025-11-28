@@ -1,5 +1,6 @@
 package com.ssafy.home.controller;
 
+import com.ssafy.home.dto.AddressCoordinateDto;
 import com.ssafy.home.dto.DongCodeDto;
 import com.ssafy.home.service.DongCodeService;
 import lombok.RequiredArgsConstructor;
@@ -11,15 +12,28 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/dongcode")
+@RequestMapping("/api/v1/dongcode")
 @RequiredArgsConstructor
 public class DongCodeController {
-
     private final DongCodeService dongCodeService;
 
     /**
+     * 법정동 코드의 대표 좌표 조회
+     * GET /api/v1/dongcode/{code}/coordinate
+     */
+    @GetMapping("/{code}/coordinate")
+    public ResponseEntity<AddressCoordinateDto> getCoordinate(@PathVariable("code") String code) {
+        log.info("대표 좌표 조회 요청 - code: {}", code);
+        AddressCoordinateDto dto = dongCodeService.getCoordinate(code);
+        if (dto == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      * 모든 시도 목록 조회
-     * GET /api/dongcode/sido
+     * GET /api/v1/dongcode/sido
      */
     @GetMapping("/sido")
     public ResponseEntity<List<DongCodeDto>> getSidoList() {
@@ -31,7 +45,7 @@ public class DongCodeController {
 
     /**
      * 특정 시도의 구군 목록 조회
-     * GET /api/dongcode/gugun?sido=서울특별시
+     * GET /api/v1/dongcode/gugun?sido=서울특별시
      */
     @GetMapping("/gugun")
     public ResponseEntity<List<DongCodeDto>> getGugunList(@RequestParam("sido") String sidoName) {
@@ -43,7 +57,7 @@ public class DongCodeController {
 
     /**
      * 특정 시도, 구군의 동 목록 조회
-     * GET /api/dongcode/dong?sido=서울특별시&gugun=강남구
+     * GET /api/v1/dongcode/dong?sido=서울특별시&gugun=강남구
      */
     @GetMapping("/dong")
     public ResponseEntity<List<DongCodeDto>> getDongList(
@@ -55,4 +69,3 @@ public class DongCodeController {
         return ResponseEntity.ok(dongList);
     }
 }
-

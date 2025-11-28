@@ -35,5 +35,19 @@
         ORDER BY dong_name
     </select>
 
-</mapper>
+    <!-- 대표 좌표 조회 -->
+    <resultMap id="AddressCoordinateResultMap" type="com.ssafy.home.dto.AddressCoordinateDto">
+        <id property="dongCode" column="dong_code"/>
+        <result property="sidoName" column="sido_name"/>
+        <result property="gugunName" column="gugun_name"/>
+        <result property="dongName" column="dong_name"/>
+        <result property="latitude" column="latitude"/>
+        <result property="longitude" column="longitude"/>
+    </resultMap>
 
+    <select id="selectCoordinateByCode" resultMap="AddressCoordinateResultMap">
+        SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude
+        FROM dongcodes
+        WHERE dong_code = #{code}
+    </select>
+</mapper>

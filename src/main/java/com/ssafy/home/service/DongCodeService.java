@@ -1,5 +1,6 @@
 package com.ssafy.home.service;
 
+import com.ssafy.home.dto.AddressCoordinateDto;
 import com.ssafy.home.dto.DongCodeDto;
 import com.ssafy.home.mapper.DongCodeMapper;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +34,8 @@ public class DongCodeService {
     public List<DongCodeDto> getDongByGugun(String sidoName, String gugunName) {
         return dongCodeMapper.selectDongByGugun(sidoName, gugunName);
     }
-}
 
+    public AddressCoordinateDto getCoordinate(String code) {
+        return dongCodeMapper.selectCoordinateByCode(code);
+    }
+}

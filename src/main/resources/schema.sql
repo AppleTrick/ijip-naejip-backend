@@ -7,7 +7,7 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema ssafy_home
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `ssafy_home` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE SCHEMA IF NOT EXISTS `ssafy_home` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
 USE `ssafy_home` ;
 
 -- -----------------------------------------------------
@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`dongcodes` (
     `sido_name` VARCHAR(30) NULL DEFAULT NULL COMMENT '시도이름',
     `gugun_name` VARCHAR(30) NULL DEFAULT NULL COMMENT '구군이름',
     `dong_name` VARCHAR(30) NULL DEFAULT NULL COMMENT '동이름',
-    PRIMARY KEY (`dong_code`))
+    `latitude` DECIMAL(10, 8) NULL DEFAULT NULL COMMENT '대표 위도',
+    `longitude` DECIMAL(11, 8) NULL DEFAULT NULL COMMENT '대표 경도',
+    PRIMARY KEY (`dong_code`),
+    INDEX `idx_coordinates` (`latitude` ASC, `longitude` ASC) VISIBLE)
     ENGINE = InnoDB
     DEFAULT CHARACTER SET = utf8mb4
     COLLATE = utf8mb4_0900_ai_ci
