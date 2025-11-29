@@ -11,7 +11,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/house")
+@RequestMapping({"/api/house", "/api/v1/house"})
 @RequiredArgsConstructor
 public class HouseDealController {
 

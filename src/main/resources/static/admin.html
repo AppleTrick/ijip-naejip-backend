@@ -139,12 +139,6 @@
             }
         }
 
-        .cascade-selects {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-        }
-
         .cascade-selects > div {
             flex: 1;
         }
@@ -159,21 +153,21 @@
             <h2>📍 지역코드 API</h2>
 
             <div class="form-group">
-                <label>1단계: 시도 선택 (페이지 로딩 시 자동으로 불러옴)</label>
+                <label for="sidoSelect">1단계: 시도 선택 (페이지 로딩 시 자동으로 불러옴)</label>
                 <select id="sidoSelect">
                     <option value="">시도 목록을 불러오는 중...</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>2단계: 구군 선택 (시도 선택 시 자동으로 불러옴)</label>
+                <label for="gugunSelect">2단계: 구군 선택 (시도 선택 시 자동으로 불러옴)</label>
                 <select id="gugunSelect">
                     <option value="">시도를 먼저 선택하세요</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>3단계: 동 선택 (구군 선택 시 자동으로 불러오고 조회됨)</label>
+                <label for="dongSelect">3단계: 동 선택 (구군 선택 시 자동으로 불러오고 조회됨)</label>
                 <select id="dongSelect">
                     <option value="">구군을 먼저 선택하세요</option>
                 </select>
@@ -190,12 +184,12 @@
                 <h2>🏘️ 동코드로 최근 거래 조회</h2>
 
                 <div class="form-group">
-                    <label>동코드</label>
+                    <label for="dongCodeInput">동코드</label>
                     <input type="text" id="dongCodeInput" placeholder="예: 1168010100">
                 </div>
 
                 <div class="form-group">
-                    <label>조회 개수</label>
+                    <label for="limitInput">조회 개수</label>
                     <input type="number" id="limitInput" value="10" min="1" max="100">
                 </div>
 
@@ -210,7 +204,7 @@
                 <h2>🏢 아파트별 거래 내역 조회</h2>
 
                 <div class="form-group">
-                    <label>아파트 시퀀스 (apt_seq)</label>
+                    <label for="aptSeqInput">아파트 시퀀스 (apt_seq)</label>
                     <input type="text" id="aptSeqInput" placeholder="예: 11680-1">
                 </div>
 
@@ -226,7 +220,7 @@
             <h2>📄 거래 번호로 상세 조회</h2>
 
             <div class="form-group">
-                <label>거래 번호 (no)</label>
+                <label for="dealNoInput">거래 번호 (no)</label>
                 <input type="number" id="dealNoInput" placeholder="예: 1">
             </div>
 
@@ -239,7 +233,7 @@
     </div>
 
     <script>
-        const API_BASE = '/api';
+        const API_BASE = '/api/v1';
 
         // 결과 표시 헬퍼 함수
         function displayResult(elementId, data, isError = false) {
@@ -428,4 +422,3 @@
     </script>
 </body>
 </html>
-
