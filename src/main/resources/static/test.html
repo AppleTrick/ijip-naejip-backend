@@ -220,18 +220,23 @@
             displayResult('sidoResponse', {}, true);
             try {
                 const response = await fetch(`${API_BASE}/dongcode/sido`);
-                const data = await response.json();
+                const result = await response.json();
 
-                const sidoSelect = document.getElementById('sidoSelect');
-                sidoSelect.innerHTML = '<option value="">시도 선택...</option>';
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.sidoName;
-                    option.textContent = item.sidoName;
-                    sidoSelect.appendChild(option);
-                });
+                if (result.code === '200' && result.data) {
+                    const data = result.data;
+                    const sidoSelect = document.getElementById('sidoSelect');
+                    sidoSelect.innerHTML = '<option value="">시도 선택...</option>';
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.sidoName;
+                        option.textContent = item.sidoName;
+                        sidoSelect.appendChild(option);
+                    });
 
-                displayResult('sidoResponse', { count: data.length, items: data });
+                    displayResult('sidoResponse', { count: data.length, items: data });
+                } else {
+                    displayResult('sidoResponse', { error: result.message || '데이터를 불러올 수 없습니다' });
+                }
             } catch (error) {
                 displayResult('sidoResponse', { error: error.message });
             }
@@ -252,16 +257,21 @@
 
             try {
                 const response = await fetch(`${API_BASE}/dongcode/gugun?sido=${encodeURIComponent(sidoName)}`);
-                const data = await response.json();
+                const result = await response.json();
 
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.gugunName;
-                    option.textContent = item.gugunName;
-                    gugunSelect.appendChild(option);
-                });
+                if (result.code === '200' && result.data) {
+                    const data = result.data;
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.gugunName;
+                        option.textContent = item.gugunName;
+                        gugunSelect.appendChild(option);
+                    });
 
-                displayResult('gugunResponse', { count: data.length, items: data });
+                    displayResult('gugunResponse', { count: data.length, items: data });
+                } else {
+                    displayResult('gugunResponse', { error: result.message || '데이터를 불러올 수 없습니다' });
+                }
             } catch (error) {
                 displayResult('gugunResponse', { error: error.message });
             }
@@ -283,16 +293,21 @@
                 const response = await fetch(
                     `${API_BASE}/dongcode/dong?sido=${encodeURIComponent(sidoName)}&gugun=${encodeURIComponent(gugunName)}`
                 );
-                const data = await response.json();
+                const result = await response.json();
 
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.dongCode;
-                    option.textContent = `${item.dongName} (${item.dongCode})`;
-                    dongSelect.appendChild(option);
-                });
+                if (result.code === '200' && result.data) {
+                    const data = result.data;
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.dongCode;
+                        option.textContent = `${item.dongName} (${item.dongCode})`;
+                        dongSelect.appendChild(option);
+                    });
 
-                displayResult('dongResponse', { count: data.length, items: data });
+                    displayResult('dongResponse', { count: data.length, items: data });
+                } else {
+                    displayResult('dongResponse', { error: result.message || '데이터를 불러올 수 없습니다' });
+                }
             } catch (error) {
                 displayResult('dongResponse', { error: error.message });
             }
@@ -322,8 +337,13 @@
                 const response = await fetch(
                     `${API_BASE}/deals?dongCode=${dongCode}&limit=${limit}`
                 );
-                const data = await response.json();
-                displayResult('dealsResponse', data);
+                const result = await response.json();
+
+                if (result.code === '200' && result.data) {
+                    displayResult('dealsResponse', result.data);
+                } else {
+                    displayResult('dealsResponse', { error: result.message || '데이터를 불러올 수 없습니다' });
+                }
             } catch (error) {
                 displayResult('dealsResponse', { error: error.message });
             }

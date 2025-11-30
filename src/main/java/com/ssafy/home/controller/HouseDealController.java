@@ -1,5 +1,6 @@
 package com.ssafy.home.controller;
 
+import com.ssafy.home.dto.CommonResponse;
 import com.ssafy.home.dto.HouseDealResponse;
 import com.ssafy.home.service.HouseDealService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +23,7 @@ public class HouseDealController {
 
     @Operation(summary = "최근 거래 내역 조회", description = "최근 거래 내역을 조회합니다")
     @GetMapping("/deals")
-    public ResponseEntity<List<HouseDealResponse>> getDeals(
+    public ResponseEntity<CommonResponse<List<HouseDealResponse>>> getDeals(
             @Parameter(description = "법정동 코드 (10자리)")
             @RequestParam(value = "dongCode", required = false) String dongCode,
             @Parameter(description = "조회 개수 (기본값: 10)")
@@ -30,19 +31,19 @@ public class HouseDealController {
         log.info("동코드별 거래 내역 조회 요청 - 동코드: {}, 개수: {}", dongCode, limit);
         List<HouseDealResponse> deals = houseDealService.getRecentDeals(dongCode, limit);
         log.info("동코드별 거래 내역 조회 완료: {} 개", deals.size());
-        return ResponseEntity.ok(deals);
+        return ResponseEntity.ok(CommonResponse.success(deals));
     }
 
     // 2. 특정 아파트의 하위 리소스 (거래 내역) 조회
     @Operation(summary = "아파트별 거래 내역 조회", description = "특정 아파트의 모든 거래 내역을 조회합니다")
     @GetMapping("/apartments/{aptSeq}/deals")
-    public ResponseEntity<List<HouseDealResponse>> getDealsByAptSeq(
+    public ResponseEntity<CommonResponse<List<HouseDealResponse>>> getDealsByAptSeq(
             @Parameter(description = "아파트 시퀀스 (예: 11680-1)", required = true)
             @PathVariable("aptSeq") String aptSeq) {
         log.info("아파트별 거래 내역 조회 요청 - aptSeq: {}", aptSeq);
         List<HouseDealResponse> deals = houseDealService.getDealsByAptSeq(aptSeq);
         log.info("아파트별 거래 내역 조회 완료: {} 개", deals.size());
-        return ResponseEntity.ok(deals);
+        return ResponseEntity.ok(CommonResponse.success(deals));
     }
 }
 

@@ -34,18 +34,11 @@ public class AreaController {
         boolean isLatLgnMissing = minLat == null || maxLat == null || minLng == null || maxLng == null;
 
         if (isLatLgnMissing) {
-            return ResponseEntity.badRequest().body(
-                    new CommonResponse<>(
-                            "400",
-                            "4개의 좌표(minLat, maxLat, minLng, maxLng)는 모두 입력되어야 합니다.",
-                            null
-                    ));
+            return ResponseEntity.badRequest()
+                    .body(CommonResponse.fail("400", "4개의 좌표(minLat, maxLat, minLng, maxLng)는 모두 입력되어야 합니다."));
         }
 
-        return ResponseEntity.ok().body(new CommonResponse<>(
-                "200",
-                "Success",
-                areaService.searchAreaAddress(minLat, maxLat, minLng, maxLng, scope)
-        ));
+        List<AddressResponse> areas = areaService.searchAreaAddress(minLat, maxLat, minLng, maxLng, scope);
+        return ResponseEntity.ok(CommonResponse.success(areas));
     }
 }
