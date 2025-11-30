@@ -14,10 +14,10 @@ public class HouseDealService {
     private final HouseDealMapper houseDealMapper;
 
     /**
-     * 특정 동코드의 최근 거래 내역 조회
+     * 최근 거래 내역 조회
      */
-    public List<HouseDealResponse> getRecentDealsByDongCode(String dongCode, int limit) {
-        return houseDealMapper.selectRecentDealsByDongCode(dongCode, limit);
+    public List<HouseDealResponse> getRecentDeals(String dongCode, int limit) {
+        return houseDealMapper.selectRecentDeals(dongCode, limit);
     }
 
     /**

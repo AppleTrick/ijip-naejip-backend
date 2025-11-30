@@ -320,7 +320,7 @@
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/house/deals/dong/${dongCode}?limit=${limit}`
+                    `${API_BASE}/deals?dongCode=${dongCode}&limit=${limit}`
                 );
                 const data = await response.json();
                 displayResult('dealsResponse', data);

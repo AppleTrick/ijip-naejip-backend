@@ -15,7 +15,7 @@ public interface HouseDealMapper {
      * @param limit 조회할 최대 개수
      * @return 최근 거래 내역 목록
      */
-    List<HouseDealResponse> selectRecentDealsByDongCode(@Param("dongCode") String dongCode,
+    List<HouseDealResponse> selectRecentDeals(@Param("dongCode") String dongCode,
                                                         @Param("limit") int limit);
 
     /**
