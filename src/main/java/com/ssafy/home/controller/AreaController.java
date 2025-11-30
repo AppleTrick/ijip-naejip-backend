@@ -1,6 +1,11 @@
 package com.ssafy.home.controller;
 
+import com.ssafy.home.dto.AddressResponse;
 import com.ssafy.home.dto.AreaScope;
+import com.ssafy.home.dto.CommonResponse;
+import com.ssafy.home.service.AreaService;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,17 +13,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/area")
 @Slf4j
 public class AreaController {
-    /**
-     * 특정 범위의 지역 정보 조회
-     * GET /api/v1/area
-     */
+    private final AreaService areaService;
+
+    @Operation(summary = "사각형 범위 기반 지역 목록 조회", description = "사각형 좌표 범위에 따른 지역 목록을 조회합니다")
     @GetMapping
-    public ResponseEntity<?> searchAreaAddress(
+    public ResponseEntity<CommonResponse<List<AddressResponse>>> searchAreaAddress(
             @RequestParam(value = "minLat", required = false) Double minLat,
             @RequestParam(value = "maxLat", required = false) Double maxLat,
             @RequestParam(value = "minLng", required = false) Double minLng,
@@ -27,10 +34,18 @@ public class AreaController {
         boolean isLatLgnMissing = minLat == null || maxLat == null || minLng == null || maxLng == null;
 
         if (isLatLgnMissing) {
-            log.warn("좌표 파라미터가 불완전합니다.");
-            return ResponseEntity.badRequest().body("4개의 좌표(minLat, maxLat, minLng, maxLng)는 모두 입력되어야 합니다.");
+            return ResponseEntity.badRequest().body(
+                    new CommonResponse<>(
+                            "400",
+                            "4개의 좌표(minLat, maxLat, minLng, maxLng)는 모두 입력되어야 합니다.",
+                            null
+                    ));
         }
 
-        return ResponseEntity.internalServerError().body("구현 중입니다.");
+        return ResponseEntity.ok().body(new CommonResponse<>(
+                "200",
+                "Success",
+                areaService.searchAreaAddress(minLat, maxLat, minLng, maxLng, scope)
+        ));
     }
 }

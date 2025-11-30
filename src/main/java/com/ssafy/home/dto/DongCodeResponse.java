@@ -9,7 +9,7 @@ public class DongCodeResponse {
     private String gugunName;
     private String dongName;
 
-    private String latitude;
-    private String longitude;
+    private Double latitude;
+    private Double longitude;
 }
 
