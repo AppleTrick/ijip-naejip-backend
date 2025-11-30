@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -17,12 +18,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 적용
-            .csrf(csrf -> csrf.disable()) // REST API이므로 CSRF 비활성화
+            .csrf(AbstractHttpConfigurer::disable) // REST API이므로 CSRF 비활성화
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()        // API 전체 허용
-                .requestMatchers("/admin.html").permitAll()    // 관리자 페이지 허용
-                .requestMatchers("/actuator/**").permitAll()   // Health check 허용
-                .anyRequest().permitAll()                       // 나머지도 일단 허용
+                .requestMatchers("/api/**").permitAll()                           // API 전체 허용
+                .requestMatchers("/admin.html").permitAll()                       // 관리자 페이지 허용
+                .requestMatchers("/actuator/**").permitAll()                      // Health check 허용
+                .requestMatchers("/swagger-ui/**").permitAll()                    // Swagger UI 허용
+                .requestMatchers("/swagger-ui.html").permitAll()                  // Swagger UI HTML 허용
+                .requestMatchers("/v3/api-docs/**").permitAll()                   // OpenAPI 문서 허용
+                .requestMatchers("/api-docs/**").permitAll()                      // OpenAPI 문서 허용
+                .anyRequest().permitAll()                                         // 나머지도 일단 허용
             );
 
         return http.build();
