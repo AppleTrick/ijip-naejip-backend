@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부동산 API 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        .response-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .loading {
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 부동산 API 테스트</h1>
+
+        <!-- 지역 선택 섹션 -->
+        <div class="section">
+            <h2>📍 지역 선택 (DongCodeResponse)</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sidoSelect">법정시도 선택</label>
+                    <select id="sidoSelect">
+                        <option value="">시도 선택...</option>
+                    </select>
+                    <div class="response-box" id="sidoResponse">
+                        <pre>응답 없음</pre>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gugunSelect">법정구군 선택</label>
+                    <select id="gugunSelect">
+                        <option value="">구군 선택...</option>
+                    </select>
+                    <div class="response-box" id="gugunResponse">
+                        <pre>응답 없음</pre>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dongSelect">법정동 선택</label>
+                    <select id="dongSelect">
+                        <option value="">동 선택...</option>
+                    </select>
+                    <div class="response-box" id="dongResponse">
+                        <pre>응답 없음</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 거래내역 검색 섹션 -->
+        <div class="section">
+            <h2>🏘️ 거래내역 검색</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dongCodeSearch">동코드</label>
+                    <input type="text" id="dongCodeSearch" placeholder="예: 1168010100">
+                </div>
+
+                <div class="form-group">
+                    <label for="limitInput">조회 개수</label>
+                    <input type="number" id="limitInput" value="10" min="1" max="100">
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button onclick="searchDeals()">검색</button>
+                </div>
+            </div>
+
+            <div class="response-box" id="dealsResponse">
+                <pre>검색 결과가 표시됩니다</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+
+        // 결과 표시 함수
+        function displayResult(elementId, data, isLoading = false) {
+            const element = document.getElementById(elementId);
+            if (isLoading) {
+                element.innerHTML = '<pre class="loading">로딩 중...</pre>';
+            } else if (data.error) {
+                element.innerHTML = `<pre class="error">오류: ${data.error}</pre>`;
+            } else {
+                element.innerHTML = `<pre class="success">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+        }
+
+        // 시도 목록 조회
+        async function loadSidoList() {
+            displayResult('sidoResponse', {}, true);
+            try {
+                const response = await fetch(`${API_BASE}/dongcode/sido`);
+                const data = await response.json();
+
+                const sidoSelect = document.getElementById('sidoSelect');
+                sidoSelect.innerHTML = '<option value="">시도 선택...</option>';
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.sidoName;
+                    option.textContent = item.sidoName;
+                    sidoSelect.appendChild(option);
+                });
+
+                displayResult('sidoResponse', { count: data.length, items: data });
+            } catch (error) {
+                displayResult('sidoResponse', { error: error.message });
+            }
+        }
+
+        // 구군 목록 조회
+        async function loadGugunList() {
+            const sidoName = document.getElementById('sidoSelect').value;
+            if (!sidoName) return;
+
+            displayResult('gugunResponse', {}, true);
+
+            // 초기화
+            const gugunSelect = document.getElementById('gugunSelect');
+            const dongSelect = document.getElementById('dongSelect');
+            gugunSelect.innerHTML = '<option value="">구군 선택...</option>';
+            dongSelect.innerHTML = '<option value="">동 선택...</option>';
+
+            try {
+                const response = await fetch(`${API_BASE}/dongcode/gugun?sido=${encodeURIComponent(sidoName)}`);
+                const data = await response.json();
+
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.gugunName;
+                    option.textContent = item.gugunName;
+                    gugunSelect.appendChild(option);
+                });
+
+                displayResult('gugunResponse', { count: data.length, items: data });
+            } catch (error) {
+                displayResult('gugunResponse', { error: error.message });
+            }
+        }
+
+        // 동 목록 조회
+        async function loadDongList() {
+            const sidoName = document.getElementById('sidoSelect').value;
+            const gugunName = document.getElementById('gugunSelect').value;
+            if (!sidoName || !gugunName) return;
+
+            displayResult('dongResponse', {}, true);
+
+            // 초기화
+            const dongSelect = document.getElementById('dongSelect');
+            dongSelect.innerHTML = '<option value="">동 선택...</option>';
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/dongcode/dong?sido=${encodeURIComponent(sidoName)}&gugun=${encodeURIComponent(gugunName)}`
+                );
+                const data = await response.json();
+
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.dongCode;
+                    option.textContent = `${item.dongName} (${item.dongCode})`;
+                    dongSelect.appendChild(option);
+                });
+
+                displayResult('dongResponse', { count: data.length, items: data });
+            } catch (error) {
+                displayResult('dongResponse', { error: error.message });
+            }
+        }
+
+        // 동 선택 시 동코드 자동 입력
+        function onDongSelected() {
+            const dongCode = document.getElementById('dongSelect').value;
+            if (dongCode) {
+                document.getElementById('dongCodeSearch').value = dongCode;
+            }
+        }
+
+        // 거래내역 검색
+        async function searchDeals() {
+            const dongCode = document.getElementById('dongCodeSearch').value;
+            const limit = document.getElementById('limitInput').value;
+
+            if (!dongCode) {
+                alert('동코드를 입력하세요!');
+                return;
+            }
+
+            displayResult('dealsResponse', {}, true);
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/house/deals/dong/${dongCode}?limit=${limit}`
+                );
+                const data = await response.json();
+                displayResult('dealsResponse', data);
+            } catch (error) {
+                displayResult('dealsResponse', { error: error.message });
+            }
+        }
+
+        // 이벤트 리스너
+        document.getElementById('sidoSelect').addEventListener('change', loadGugunList);
+        document.getElementById('gugunSelect').addEventListener('change', loadDongList);
+        document.getElementById('dongSelect').addEventListener('change', onDongSelected);
+
+        // 페이지 로드 시
+        window.addEventListener('DOMContentLoaded', loadSidoList);
+    </script>
+</body>
+</html>
+

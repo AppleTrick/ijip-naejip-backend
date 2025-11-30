@@ -1,6 +1,6 @@
 package com.ssafy.home.mapper;
 
-import com.ssafy.home.dto.HouseDealDto;
+import com.ssafy.home.dto.HouseDealResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,22 +15,15 @@ public interface HouseDealMapper {
      * @param limit 조회할 최대 개수
      * @return 최근 거래 내역 목록
      */
-    List<HouseDealDto> selectRecentDealsByDongCode(@Param("dongCode") String dongCode,
-                                                     @Param("limit") int limit);
+    List<HouseDealResponse> selectRecentDealsByDongCode(@Param("dongCode") String dongCode,
+                                                        @Param("limit") int limit);
 
     /**
      * 특정 아파트의 모든 거래 내역 조회
      * @param aptSeq 아파트 시퀀스
      * @return 거래 내역 목록
      */
-    List<HouseDealDto> selectDealsByAptSeq(@Param("aptSeq") String aptSeq);
-
-    /**
-     * 특정 거래 내역 조회
-     * @param no 거래 번호
-     * @return 거래 내역
-     */
-    HouseDealDto selectDealByNo(@Param("no") Integer no);
+    List<HouseDealResponse> selectDealsByAptSeq(@Param("aptSeq") String aptSeq);
 
     /**
      * 지도 영역(Bounds) 내의 거래 내역 조회
@@ -41,10 +34,11 @@ public interface HouseDealMapper {
      * @param limit 조회할 최대 개수
      * @return 거래 내역 목록
      */
-    List<HouseDealDto> selectHouseDealsByBounds(@Param("minLat") double minLat,
-                                                @Param("maxLat") double maxLat,
-                                                @Param("minLng") double minLng,
-                                                @Param("maxLng") double maxLng,
-                                                @Param("limit") int limit);
+    @Deprecated
+    List<HouseDealResponse> selectHouseDealsByBounds(@Param("minLat") double minLat,
+                                                     @Param("maxLat") double maxLat,
+                                                     @Param("minLng") double minLng,
+                                                     @Param("maxLng") double maxLng,
+                                                     @Param("limit") int limit);
 }
 

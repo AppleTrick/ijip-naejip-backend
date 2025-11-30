@@ -3,7 +3,7 @@ package com.ssafy.home.dto;
 import lombok.Data;
 
 @Data
-public class HouseDealDto {
+public class HouseDealResponse {
     private String dongName;
     private String gugunName;
     private String sidoName;
