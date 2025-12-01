@@ -14,6 +14,8 @@ public interface AreaMapper {
         SELECT
             dong_code AS dongCode,
             sido_name AS sidoName,
+            NULL AS gugunName,
+            NULL AS dongName,
             latitude,
             longitude
         FROM dongcodes
@@ -32,6 +34,7 @@ public interface AreaMapper {
             dong_code AS dongCode,
             sido_name AS sidoName,
             gugun_name AS gugunName,
+            NULL AS dongName,
             latitude,
             longitude
         FROM dongcodes
