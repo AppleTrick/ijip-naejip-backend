@@ -20,7 +20,6 @@ import java.util.List;
 @Tag(name = "부동산 거래 및 아파트 정보 API", description = "부동산 거래 내역 및 아파트 정보 조회 API")
 public class HouseDealController {
     private final HouseDealService houseDealService;
-
     @Operation(summary = "최근 거래 내역 조회", description = "최근 거래 내역을 조회합니다")
     @GetMapping("/deals")
     public ResponseEntity<CommonResponse<List<HouseDealResponse>>> getDeals(
@@ -34,7 +33,6 @@ public class HouseDealController {
         return ResponseEntity.ok(CommonResponse.success(deals));
     }
 
-    // 2. 특정 아파트의 하위 리소스 (거래 내역) 조회
     @Operation(summary = "아파트별 거래 내역 조회", description = "특정 아파트의 모든 거래 내역을 조회합니다")
     @GetMapping("/apartments/{aptSeq}/deals")
     public ResponseEntity<CommonResponse<List<HouseDealResponse>>> getDealsByAptSeq(
