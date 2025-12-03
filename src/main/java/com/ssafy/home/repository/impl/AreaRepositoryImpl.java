@@ -28,5 +28,10 @@ public class AreaRepositoryImpl implements AreaRepository {
     public List<AddressResponse> findDongByBoundingBox(Double minLat, Double maxLat, Double minLng, Double maxLng) {
         return areaMapper.findDongByBoundingBox(minLat, maxLat, minLng, maxLng);
     }
+
+    @Override
+    public List<AddressResponse> findAptByBoundingBox(Double minLat, Double maxLat, Double minLng, Double maxLng) {
+        return areaMapper.findAptByBoundingBox(minLat, maxLat, minLng, maxLng);
+    }
 }
 

@@ -10,6 +10,7 @@ public record DongCodeResponse(
         String gugunName,
         String dongName,
         Double latitude,
-        Double longitude
+        Double longitude,
+        Integer avgPrice
 ) {}
 

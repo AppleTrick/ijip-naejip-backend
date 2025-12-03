@@ -12,6 +12,7 @@
         <result property="dongName" column="dong_name"/>
         <result property="latitude" column="latitude"/>
         <result property="longitude" column="longitude"/>
+        <result property="avgPrice" column="avg_price"/>
     </resultMap>
 
 </mapper>

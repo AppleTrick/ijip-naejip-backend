@@ -12,7 +12,7 @@ import java.util.List;
 public interface DongCodeMapper {
 
     @Select("""
-            SELECT DISTINCT dong_code, sido_name, latitude, longitude
+            SELECT DISTINCT dong_code, sido_name, latitude, longitude, avg_price
             FROM dongcodes
             WHERE sido_name IS NOT NULL AND gugun_name IS NULL
             ORDER BY sido_name
@@ -21,7 +21,7 @@ public interface DongCodeMapper {
     List<DongCodeResponse> selectAllSido();
 
     @Select("""
-            SELECT DISTINCT dong_code, sido_name, gugun_name, latitude, longitude
+            SELECT DISTINCT dong_code, sido_name, gugun_name, latitude, longitude, avg_price
             FROM dongcodes
             WHERE sido_name = #{sidoName}
               AND gugun_name IS NOT NULL AND dong_name IS NULL
@@ -31,7 +31,7 @@ public interface DongCodeMapper {
     List<DongCodeResponse> selectGugunBySido(@Param("sidoName") String sidoName);
 
     @Select("""
-            SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude
+            SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude, avg_price
             FROM dongcodes
             WHERE sido_name = #{sidoName}
               AND gugun_name = #{gugunName}
@@ -43,7 +43,7 @@ public interface DongCodeMapper {
                                              @Param("gugunName") String gugunName);
 
     @Select("""
-            SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude
+            SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude, avg_price
             FROM dongcodes
             WHERE dong_code = #{code}
         """)

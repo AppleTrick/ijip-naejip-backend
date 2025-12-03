@@ -9,7 +9,10 @@ public record AddressResponse(
         String sidoName,
         String gugunName,
         String dongName,
+        String aptSeq,
+        String aptName,
         Double latitude,
-        Double longitude
+        Double longitude,
+        Integer avgPrice
 ) {}
 
