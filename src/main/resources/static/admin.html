@@ -205,9 +205,10 @@
                 <div class="form-group">
                     <label for="scopeSelect">AreaScope 선택</label>
                     <select id="scopeSelect">
-                        <option value="dong">동 (DONG)</option>
-                        <option value="gugun">구군 (GUGUN)</option>
-                        <option value="sido">시도 (SIDO)</option>
+                        <option value="APT">아파트 (APT)</option>
+                        <option value="DONG">동 (DONG)</option>
+                        <option value="GUGUN">구군 (GUGUN)</option>
+                        <option value="SIDO">시도 (SIDO)</option>
                     </select>
                 </div>
                 <div class="info-box">
@@ -450,16 +451,40 @@
                             let title = '';
                             let info = '';
 
-                            if (scope === 'dong') {
+                            // 평균 가격 포맷팅
+                            const avgPriceText = area.avgPrice
+                                ? `평균 가격: ${(area.avgPrice / 10000).toFixed(0)}억원`
+                                : '가격 정보 없음';
+
+                            if (scope === 'APT') {
+                                title = area.aptName || '아파트 정보 없음';
+                                if (area.avgPrice) {
+                                    title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
+                                }
+                                info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
+                                        ${avgPriceText}<br>
+                                        아파트코드: ${area.aptSeq || 'N/A'}`;
+                            } else if (scope === 'DONG') {
                                 title = area.dongName || '동 정보 없음';
+                                if (area.avgPrice) {
+                                    title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
+                                }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''}<br>
+                                        ${avgPriceText}<br>
                                         동코드: ${area.dongCode || 'N/A'}`;
-                            } else if (scope === 'gugun') {
+                            } else if (scope === 'GUGUN') {
                                 title = area.gugunName || '구군 정보 없음';
-                                info = `${area.sidoName || ''}`;
-                            } else if (scope === 'sido') {
+                                if (area.avgPrice) {
+                                    title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
+                                }
+                                info = `${area.sidoName || ''}<br>
+                                        ${avgPriceText}`;
+                            } else if (scope === 'SIDO') {
                                 title = area.sidoName || '시도 정보 없음';
-                                info = '';
+                                if (area.avgPrice) {
+                                    title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
+                                }
+                                info = avgPriceText;
                             }
 
                             addMarker(position, title, info);
@@ -472,7 +497,7 @@
                     resultBox.innerHTML = `
                         <strong>검색 완료!</strong><br>
                         총 ${areas.length}개의 지역을 찾았습니다.<br>
-                        범위: ${scope.toUpperCase()}
+                        범위: ${scope}
                     `;
                 } else {
                     resultBox.className = 'info-box error';
