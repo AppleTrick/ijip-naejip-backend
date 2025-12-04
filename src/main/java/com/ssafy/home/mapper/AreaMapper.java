@@ -16,6 +16,9 @@ public interface AreaMapper {
             sido_name AS sidoName,
             NULL AS gugunName,
             NULL AS dongName,
+            NULL,
+            NULL,
+            NULL,
             latitude,
             longitude,
             avg_price AS avgPrice
@@ -36,6 +39,9 @@ public interface AreaMapper {
             sido_name AS sidoName,
             gugun_name AS gugunName,
             NULL AS dongName,
+            NULL,
+            NULL,
+            NULL,
             latitude,
             longitude,
             avg_price AS avgPrice
@@ -56,6 +62,9 @@ public interface AreaMapper {
             sido_name AS sidoName,
             gugun_name AS gugunName,
             dong_name AS dongName,
+            NULL,
+            NULL,
+            NULL,
             latitude,
             longitude,
             avg_price AS avgPrice
@@ -78,6 +87,7 @@ public interface AreaMapper {
             dong_name AS dongName,
             apt_seq AS aptSeq,
             apt_nm AS aptName,
+            NULL,
             hi.latitude,
             hi.longitude,
             hi.avg_price AS avgPrice

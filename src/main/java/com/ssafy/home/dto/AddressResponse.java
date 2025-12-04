@@ -9,8 +9,11 @@ public record AddressResponse(
         String sidoName,
         String gugunName,
         String dongName,
+
         String aptSeq,
         String aptName,
+        String aptDong,
+
         Double latitude,
         Double longitude,
         Integer avgPrice
