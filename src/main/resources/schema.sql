@@ -115,6 +115,80 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_job_history`
     COLLATE = utf8mb4_0900_ai_ci
     COMMENT = '아파트실거래가_수집이력';
 
+-- -----------------------------------------------------
+-- Table `ssafy_home`.`users`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ssafy_home`.`users`;
+
+CREATE TABLE IF NOT EXISTS `ssafy_home`.`users` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(100) NOT NULL COMMENT '이메일 (로그인 ID)',
+    `password` VARCHAR(255) NULL COMMENT '비밀번호 (OAuth2 가입 시 NULL 가능)',
+    `name` VARCHAR(50) NOT NULL COMMENT '사용자 이름/닉네임',
+    `phone` VARCHAR(20) NULL COMMENT '전화번호',
+    `profile_image` VARCHAR(255) NULL COMMENT '프로필 이미지 URL',
+    `role` ENUM('ROLE_USER', 'ROLE_ADMIN') NOT NULL DEFAULT 'ROLE_USER',
+    `social_type` ENUM('NONE', 'KAKAO', 'NAVER', 'GOOGLE') NOT NULL DEFAULT 'NONE',
+    `social_id` VARCHAR(255) NULL COMMENT '소셜 식별값 (sub/id)',
+    `is_email_verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '이메일 인증 여부 (0/1)',
+    `gender` ENUM('male', 'female', 'other') NULL,
+    `age_group` ENUM('20s', '30s', '40s', '50+') NULL,
+    `job` ENUM('student', 'employee', 'business', 'freelancer', 'other') NULL,
+    `marital_status` ENUM('single', 'married') NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE
+) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 정보';
+
+-- -----------------------------------------------------
+-- Table `ssafy_home`.`user_notification_settings`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ssafy_home`.`user_notification_settings`;
+
+CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_notification_settings` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL,
+    `app_push` TINYINT(1) NOT NULL DEFAULT 1,
+    `email_noti` TINYINT(1) NOT NULL DEFAULT 1,
+    `marketing_noti` TINYINT(1) NOT NULL DEFAULT 0,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `fk_user_noti_user_idx` (`user_id` ASC) VISIBLE,
+    CONSTRAINT `fk_user_noti_user`
+        FOREIGN KEY (`user_id`)
+        REFERENCES `ssafy_home`.`users` (`id`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 알림 설정';
+
+-- -----------------------------------------------------
+-- Table `ssafy_home`.`user_houses`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ssafy_home`.`user_houses`;
+
+CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL,
+    `apt_seq` VARCHAR(20) NOT NULL,
+    `ownership_type` ENUM('OWNED', 'INTEREST') NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `fk_user_houses_user_idx` (`user_id` ASC) VISIBLE,
+    INDEX `fk_user_houses_apt_idx` (`apt_seq` ASC) VISIBLE,
+    CONSTRAINT `fk_user_houses_user`
+        FOREIGN KEY (`user_id`)
+        REFERENCES `ssafy_home`.`users` (`id`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT `fk_user_houses_apt`
+        FOREIGN KEY (`apt_seq`)
+        REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 관심/소유 매물';
+
 SET SQL_MODE = @OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS = @OLD_UNIQUE_CHECKS;

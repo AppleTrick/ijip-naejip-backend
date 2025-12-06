@@ -1,34 +1,53 @@
 package com.ssafy.home.config;
 
+import com.ssafy.home.filter.JwtAuthenticationFilter;
+import com.ssafy.home.util.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 적용
-            .csrf(AbstractHttpConfigurer::disable) // REST API이므로 CSRF 비활성화
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()                           // API 전체 허용
-                .requestMatchers("/admin.html").permitAll()                       // 관리자 페이지 허용
-                .requestMatchers("/actuator/**").permitAll()                      // Health check 허용
-                .requestMatchers("/swagger-ui/**").permitAll()                    // Swagger UI 허용
-                .requestMatchers("/swagger-ui.html").permitAll()                  // Swagger UI HTML 허용
-                .requestMatchers("/v3/api-docs/**").permitAll()                   // OpenAPI 문서 허용
-                .requestMatchers("/api-docs/**").permitAll()                      // OpenAPI 문서 허용
-                .anyRequest().permitAll()                                         // 나머지도 일단 허용
-            );
+                .requestMatchers(
+                    "/", "/index.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
+                    "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
+                    "/user/signup", "/user/login", "/user/check-email"
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -36,14 +55,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:5173"); // 프론트엔드 주소 허용
-        configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
-        configuration.addAllowedHeader("*"); // 모든 헤더 허용
-        configuration.setAllowCredentials(true); // 쿠키/인증정보 허용
-
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8080")); // Vue 개발 서버 & Spring Boot
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
-
