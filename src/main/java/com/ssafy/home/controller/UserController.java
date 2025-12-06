@@ -17,10 +17,12 @@ public class UserController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody User user) {
+        System.out.println("Signup request received: " + user);
         try {
             userService.signup(user);
             return ResponseEntity.ok("회원가입 성공");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -32,6 +34,49 @@ public class UserController {
             String password = loginRequest.get("password");
             Map<String, String> result = userService.login(email, password);
             return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // JWT 방식은 서버 세션이 없으므로 클라이언트에게 성공 응답만 보냄
+        return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            userService.resetPassword(email);
+            return ResponseEntity.ok("임시 비밀번호가 이메일로 전송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/email-verification/request")
+    public ResponseEntity<?> requestEmailVerification(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            userService.sendJoinCertificationMail(email);
+            return ResponseEntity.ok("인증 코드가 전송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/email-verification/confirm")
+    public ResponseEntity<?> confirmEmailVerification(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String code = request.get("code");
+            if (userService.verifyEmail(email, code)) {
+                return ResponseEntity.ok("이메일 인증이 완료되었습니다.");
+            } else {
+                return ResponseEntity.badRequest().body("인증 코드가 올바르지 않습니다.");
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

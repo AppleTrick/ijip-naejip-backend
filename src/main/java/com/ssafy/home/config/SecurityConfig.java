@@ -38,6 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .httpBasic(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -45,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
-                    "/user/signup", "/user/login", "/user/check-email"
+                    "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -61,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8080")); // Vue 개발 서버 & Spring Boot
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "http://localhost:8080")); // Vue 개발 서버 & Spring Boot
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

@@ -19,16 +19,32 @@ public class EmailService {
         String code = createVerificationCode();
         
         // 실제 SMTP 설정이 있는 경우:
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject("SSAFY Home 회원가입 인증 코드");
-        message.setText("인증 코드: " + code);
-        javaMailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject("SSAFY Home 회원가입 인증 코드");
+            message.setText("인증 코드: " + code);
+            javaMailSender.send(message);
+        } catch (Exception e) {
+            log.warn("메일 전송 실패 (SMTP 설정 확인 필요): {}", e.getMessage());
+        }
 
         // SMTP가 없는 개발 환경용:
         log.info("인증 코드 발송 대상 {}: {}", toEmail, code);
         
         return code;
+    }
+
+    public void sendTemporaryPassword(String toEmail, String tempPassword) {
+        // 실제 SMTP 설정이 있는 경우:
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("SSAFY Home 임시 비밀번호 발급");
+        message.setText("임시 비밀번호: " + tempPassword + "\n로그인 후 반드시 비밀번호를 변경해주세요.");
+        javaMailSender.send(message);
+
+        // SMTP가 없는 개발 환경용:
+        log.info("임시 비밀번호 발송 대상 {}: {}", toEmail, tempPassword);
     }
 
     private String createVerificationCode() {

@@ -180,11 +180,11 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
     CONSTRAINT `fk_user_houses_user`
         FOREIGN KEY (`user_id`)
         REFERENCES `ssafy_home`.`users` (`id`)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-    CONSTRAINT `fk_user_houses_apt`
-        FOREIGN KEY (`apt_seq`)
-        REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+    --     ON DELETE CASCADE
+    --     ON UPDATE CASCADE,
+    -- CONSTRAINT `fk_user_houses_apt`
+    --     FOREIGN KEY (`apt_seq`)
+    --     REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 관심/소유 매물';
