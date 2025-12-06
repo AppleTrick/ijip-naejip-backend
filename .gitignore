@@ -38,3 +38,4 @@ out/
 
 ### 개인 별도 파일 ###
 changhee/
+src/main/resources/application-secret.properties

@@ -19,11 +19,11 @@ public class EmailService {
         String code = createVerificationCode();
         
         // 실제 SMTP 설정이 있는 경우:
-        // SimpleMailMessage message = new SimpleMailMessage();
-        // message.setTo(toEmail);
-        // message.setSubject("SSAFY Home 회원가입 인증 코드");
-        // message.setText("인증 코드: " + code);
-        // javaMailSender.send(message);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("SSAFY Home 회원가입 인증 코드");
+        message.setText("인증 코드: " + code);
+        javaMailSender.send(message);
 
         // SMTP가 없는 개발 환경용:
         log.info("인증 코드 발송 대상 {}: {}", toEmail, code);

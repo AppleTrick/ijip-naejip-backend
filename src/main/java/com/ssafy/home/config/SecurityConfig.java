@@ -26,6 +26,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.ssafy.home.service.CustomOAuth2UserService customOAuth2UserService;
+    private final com.ssafy.home.oauth.handler.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,11 +43,15 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/", "/index.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
+                    "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
                     "/user/signup", "/user/login", "/user/check-email"
                 ).permitAll()
                 .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(oAuth2LoginSuccessHandler)
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
