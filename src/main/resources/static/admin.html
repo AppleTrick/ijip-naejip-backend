@@ -205,6 +205,7 @@
                 <div class="form-group">
                     <label for="scopeSelect">AreaScope 선택</label>
                     <select id="scopeSelect">
+                        <option value="APT_DONG">아파트 동별 (APT_DONG)</option>
                         <option value="APT">아파트 (APT)</option>
                         <option value="DONG">동 (DONG)</option>
                         <option value="GUGUN">구군 (GUGUN)</option>
@@ -456,7 +457,20 @@
                                 ? `평균 가격: ${(area.avgPrice / 10000).toFixed(0)}억원`
                                 : '가격 정보 없음';
 
-                            if (scope === 'APT') {
+                            if (scope === 'APT_DONG') {
+                                // APT_DONG: 아파트 동별 정보
+                                const aptNameWithDong = area.aptName
+                                    ? `${area.aptName} ${area.aptDong || ''}`.trim()
+                                    : '아파트 정보 없음';
+                                title = aptNameWithDong;
+                                if (area.avgPrice) {
+                                    title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
+                                }
+                                info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
+                                        ${avgPriceText}<br>
+                                        아파트동: ${area.aptDong || 'N/A'}<br>
+                                        아파트코드: ${area.aptSeq || 'N/A'}`;
+                            } else if (scope === 'APT') {
                                 title = area.aptName || '아파트 정보 없음';
                                 if (area.avgPrice) {
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
