@@ -81,4 +81,20 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PutMapping("/update")
+    public ResponseEntity<?> updateProfile(@RequestBody User user, org.springframework.security.core.Authentication authentication) {
+        try {
+            // JWT 토큰에서 사용자 이메일 추출
+            String email = authentication.getName();
+            user.setEmail(email); // 토큰의 이메일로 강제 설정 (보안)
+            
+            userService.updateUser(user);
+            
+            // 업데이트된 사용자 정보 반환
+            User updatedUser = userService.getUser(email);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

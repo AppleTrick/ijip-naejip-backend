@@ -80,4 +80,23 @@ public class UserService {
         }
         return false;
     }
+
+    @Transactional
+    public void updateUser(User user) {
+        User existingUser = userMapper.findByEmail(user.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        // 변경 가능한 필드만 업데이트 (null이 아닌 경우에만)
+        if (user.getAgeGroup() != null) existingUser.setAgeGroup(user.getAgeGroup());
+        if (user.getJob() != null) existingUser.setJob(user.getJob());
+        if (user.getGender() != null) existingUser.setGender(user.getGender());
+        if (user.getMaritalStatus() != null) existingUser.setMaritalStatus(user.getMaritalStatus());
+        
+        userMapper.update(existingUser);
+    }
+
+    public User getUser(String email) {
+        return userMapper.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
 }

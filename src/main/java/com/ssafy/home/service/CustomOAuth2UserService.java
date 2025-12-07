@@ -45,11 +45,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = oAuth2UserInfo.getName();
         String profileImage = oAuth2UserInfo.getProfileImage();
 
-        Optional<User> userOptional = userMapper.findByEmail(email);
-        User user;
+        User user = null;
+        
+        // 1. 이메일로 조회
+        if (email != null && !email.isEmpty()) {
+            user = userMapper.findByEmail(email).orElse(null);
+        }
 
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
+        // 2. 이메일로 못 찾았거나 이메일이 없는 경우, SocialID로 조회
+        if (user == null) {
+            java.util.Map<String, Object> params = java.util.Map.of(
+                "socialType", com.ssafy.home.dto.User.SocialType.valueOf(provider.toUpperCase()),
+                "socialId", providerId
+            );
+            user = userMapper.findBySocialId(params).orElse(null);
+        }
+
+        if (user != null) {
             // 기존 가입자라면 정보 업데이트
             user.setName(name);
             user.setProfileImage(profileImage);
@@ -58,6 +70,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userMapper.update(user);
         } else {
             // 신규 가입자
+            // 신규 가입자
+            if (email == null || email.isEmpty()) {
+                // 이메일이 없는 경우 (카카오 등): 임의의 이메일 생성하여 자동 가입
+                email = provider + "_" + providerId + "@social.user";
+            }
+            
             user = User.builder()
                     .email(email)
                     .name(name)

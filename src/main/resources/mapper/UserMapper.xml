@@ -50,6 +50,10 @@
         SELECT COUNT(*) > 0 FROM users WHERE email = #{email} AND deleted_at IS NULL
     </select>
 
+    <select id="findBySocialId" parameterType="map" resultMap="userResultMap">
+        SELECT * FROM users WHERE social_type = #{socialType} AND social_id = #{socialId} AND deleted_at IS NULL
+    </select>
+
     <update id="update" parameterType="User">
         UPDATE users
         SET 
@@ -59,7 +63,7 @@
             profile_image = #{profileImage},
             is_email_verified = #{isEmailVerified},
             gender = #{gender},
-            age_group = #{ageGroup},
+            age_group = #{ageGroup.value},
             job = #{job},
             marital_status = #{maritalStatus},
             updated_at = NOW()

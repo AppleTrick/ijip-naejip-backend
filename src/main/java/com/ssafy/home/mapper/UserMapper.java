@@ -12,6 +12,7 @@ public interface UserMapper {
     Optional<User> findByEmail(String email);
     Optional<User> findById(Long id);
     boolean existsByEmail(String email);
+    Optional<User> findBySocialId(java.util.Map<String, Object> params);
     void update(User user);
     void delete(Long id);
 }
