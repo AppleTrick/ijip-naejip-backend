@@ -4,23 +4,45 @@
 
 <mapper namespace="com.ssafy.home.mapper.UserMapper">
 
+    <resultMap id="userResultMap" type="User">
+        <id property="id" column="id" />
+        <result property="email" column="email" />
+        <result property="password" column="password" />
+        <result property="name" column="name" />
+        <result property="phone" column="phone" />
+        <result property="profileImage" column="profile_image" />
+        <result property="role" column="role" />
+        <result property="socialType" column="social_type" />
+        <result property="socialId" column="social_id" />
+        <result property="isEmailVerified" column="is_email_verified" />
+        <result property="gender" column="gender" />
+        <result property="ageGroup" column="age_group" typeHandler="com.ssafy.home.handler.AgeGroupTypeHandler" />
+        <result property="job" column="job" />
+        <result property="maritalStatus" column="marital_status" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
     <insert id="save" parameterType="User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO users (
             email, password, name, phone, profile_image, 
             role, social_type, social_id, is_email_verified, 
-            gender, age_group, job, marital_status
+            gender, age_group, job, marital_status,
+            created_at, updated_at
         ) VALUES (
             #{email}, #{password}, #{name}, #{phone}, #{profileImage}, 
             #{role}, #{socialType}, #{socialId}, #{isEmailVerified}, 
-            #{gender}, #{ageGroup}, #{job}, #{maritalStatus}
+            #{gender}, #{ageGroup.value}, #{job}, #{maritalStatus},
+            NOW(), NOW()
         )
     </insert>
 
-    <select id="findByEmail" parameterType="string" resultType="User">
+    <select id="findByEmail" parameterType="string" resultMap="userResultMap">
         SELECT * FROM users WHERE email = #{email} AND deleted_at IS NULL
     </select>
 
-    <select id="findById" parameterType="long" resultType="User">
+    <select id="findById" parameterType="long" resultMap="userResultMap">
         SELECT * FROM users WHERE id = #{id} AND deleted_at IS NULL
     </select>
 

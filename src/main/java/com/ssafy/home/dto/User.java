@@ -48,7 +48,13 @@ public class User {
     }
 
     public enum Gender {
-        male, female, other
+        male, female, other;
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static Gender from(String s) {
+            if (s == null || s.isEmpty()) return null;
+            return Gender.valueOf(s.toLowerCase());
+        }
     }
 
     public enum AgeGroup {
@@ -56,14 +62,46 @@ public class User {
         
         private final String value;
         AgeGroup(String value) { this.value = value; }
+        
+        @com.fasterxml.jackson.annotation.JsonValue
         public String getValue() { return value; }
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static AgeGroup from(String value) {
+            for (AgeGroup ageGroup : AgeGroup.values()) {
+                if (ageGroup.value.equals(value)) {
+                    return ageGroup;
+                }
+            }
+            return null;
+        }
     }
 
     public enum Job {
-        student, employee, business, freelancer, other
+        student, employee, business, freelancer, other;
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static Job from(String s) {
+            if (s == null || s.isEmpty()) return null;
+            try {
+                return Job.valueOf(s.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
     }
 
     public enum MaritalStatus {
-        single, married
+        single, married;
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static MaritalStatus from(String s) {
+            if (s == null || s.isEmpty()) return null;
+            try {
+                return MaritalStatus.valueOf(s.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
     }
 }
