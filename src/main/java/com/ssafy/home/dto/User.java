@@ -35,6 +35,20 @@ public class User {
     private Job job;
     private MaritalStatus maritalStatus;
     
+    @Builder.Default
+    private Boolean appPush = true;
+    @Builder.Default
+    private Boolean emailNotification = false;
+    @Builder.Default
+    private Boolean marketingNotification = false;
+    
+    // My House Info
+    private String myHouseName;
+    private String myHouseAddress;
+    private String myHouseArea;
+    private String myHouseFloor;
+    private String myHousePrice;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
