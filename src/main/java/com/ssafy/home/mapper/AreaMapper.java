@@ -101,5 +101,29 @@ public interface AreaMapper {
                                                 @Param("maxLat") Double maxLat,
                                                 @Param("minLng") Double minLng,
                                                 @Param("maxLng") Double maxLng);
+
+    @Select("""
+        SELECT
+            hi.dong_code AS dongCode,
+            sido_name AS sidoName,
+            gugun_name AS gugunName,
+            dong_name AS dongName,
+            hi.apt_seq AS aptSeq,
+            apt_nm AS aptName,
+            ads.apt_dong AS aptDong,
+            ads.latitude,
+            ads.longitude,
+            ads.avg_price AS avgPrice
+        FROM houseinfos hi, dongcodes dc, apt_dong_stats ads
+        WHERE hi.dong_code = dc.dong_code
+            AND hi.apt_seq = ads.apt_seq
+            AND hi.latitude BETWEEN #{minLat} AND #{maxLat}
+            AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+        LIMIT 100
+        """)
+    List<AddressResponse> findAptDongByBoundingBox(@Param("minLat") Double minLat,
+                                             @Param("maxLat") Double maxLat,
+                                             @Param("minLng") Double minLng,
+                                             @Param("maxLng") Double maxLng);
 }
 

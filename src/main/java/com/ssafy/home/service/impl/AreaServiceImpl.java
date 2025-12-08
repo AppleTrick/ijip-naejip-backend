@@ -20,6 +20,9 @@ public class AreaServiceImpl implements AreaService {
     @Override
     public List<AddressResponse> searchAreaAddress(Double minLat, Double maxLat, Double minLng, Double maxLng, AreaScope scope) {
         switch (scope) {
+            case APT_DONG -> {
+                return areaRepository.findAptDongByBoundingBox(minLat, maxLat, minLng, maxLng);
+            }
             case APT -> {
                 return areaRepository.findAptByBoundingBox(minLat, maxLat, minLng, maxLng);
             }
