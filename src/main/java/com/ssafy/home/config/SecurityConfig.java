@@ -46,7 +46,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
-                    "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**"
+                    "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**",
+                    "/user/reset-password",
+                    "/oauth2/**", "/login/oauth2/code/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

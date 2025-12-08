@@ -19,14 +19,6 @@
         <result property="ageGroup" column="age_group" typeHandler="com.ssafy.home.handler.AgeGroupTypeHandler" />
         <result property="job" column="job" />
         <result property="maritalStatus" column="marital_status" />
-        <result property="appPush" column="app_push" />
-        <result property="emailNotification" column="email_notification" />
-        <result property="marketingNotification" column="marketing_notification" />
-        <result property="myHouseName" column="my_house_name" />
-        <result property="myHouseAddress" column="my_house_address" />
-        <result property="myHouseArea" column="my_house_area" />
-        <result property="myHouseFloor" column="my_house_floor" />
-        <result property="myHousePrice" column="my_house_price" />
         <result property="createdAt" column="created_at" />
         <result property="updatedAt" column="updated_at" />
         <result property="deletedAt" column="deleted_at" />
@@ -37,15 +29,11 @@
             email, password, name, phone, profile_image, 
             role, social_type, social_id, is_email_verified, 
             gender, age_group, job, marital_status,
-            app_push, email_notification, marketing_notification,
-            my_house_name, my_house_address, my_house_area, my_house_floor, my_house_price,
             created_at, updated_at
         ) VALUES (
             #{email}, #{password}, #{name}, #{phone}, #{profileImage}, 
             #{role}, #{socialType}, #{socialId}, #{isEmailVerified}, 
-            #{gender}, #{ageGroup.value}, #{job}, #{maritalStatus},
-            #{appPush}, #{emailNotification}, #{marketingNotification},
-            #{myHouseName}, #{myHouseAddress}, #{myHouseArea}, #{myHouseFloor}, #{myHousePrice},
+            #{gender, jdbcType=VARCHAR}, #{ageGroup, typeHandler=com.ssafy.home.handler.AgeGroupTypeHandler, jdbcType=VARCHAR}, #{job, jdbcType=VARCHAR}, #{maritalStatus, jdbcType=VARCHAR},
             NOW(), NOW()
         )
     </insert>
@@ -74,18 +62,10 @@
             phone = #{phone},
             profile_image = #{profileImage},
             is_email_verified = #{isEmailVerified},
-            gender = #{gender},
-            age_group = #{ageGroup.value},
-            job = #{job},
-            marital_status = #{maritalStatus},
-            app_push = #{appPush},
-            email_notification = #{emailNotification},
-            marketing_notification = #{marketingNotification},
-            my_house_name = #{myHouseName},
-            my_house_address = #{myHouseAddress},
-            my_house_area = #{myHouseArea},
-            my_house_floor = #{myHouseFloor},
-            my_house_price = #{myHousePrice},
+            gender = #{gender, jdbcType=VARCHAR},
+            age_group = #{ageGroup, typeHandler=com.ssafy.home.handler.AgeGroupTypeHandler, jdbcType=VARCHAR},
+            job = #{job, jdbcType=VARCHAR},
+            marital_status = #{maritalStatus, jdbcType=VARCHAR},
             updated_at = NOW()
         WHERE id = #{id}
     </update>

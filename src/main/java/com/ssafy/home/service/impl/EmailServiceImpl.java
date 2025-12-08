@@ -20,7 +20,6 @@ public class EmailServiceImpl implements EmailService {
     public String sendVerificationCode(String toEmail) {
         String code = createVerificationCode();
         
-        // 실제 SMTP 설정이 있는 경우:
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(toEmail);
@@ -28,26 +27,28 @@ public class EmailServiceImpl implements EmailService {
             message.setText("인증 코드: " + code);
             javaMailSender.send(message);
         } catch (Exception e) {
-            log.warn("메일 전송 실패 (SMTP 설정 확인 필요): {}", e.getMessage());
+            log.error("메일 전송 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("메일 전송에 실패했습니다. 관리자에게 문의하세요.", e);
         }
 
-        // SMTP가 없는 개발 환경용:
-        log.info("인증 코드 발송 대상 {}: {}", toEmail, code);
-        
+        log.info("인증 코드 발송 성공: {}", toEmail);
         return code;
     }
 
     @Override
     public void sendTemporaryPassword(String toEmail, String tempPassword) {
-        // 실제 SMTP 설정이 있는 경우:
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject("SSAFY Home 임시 비밀번호 발급");
-        message.setText("임시 비밀번호: " + tempPassword + "\n로그인 후 반드시 비밀번호를 변경해주세요.");
-        javaMailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject("SSAFY Home 임시 비밀번호 발급");
+            message.setText("임시 비밀번호: " + tempPassword + "\n로그인 후 반드시 비밀번호를 변경해주세요.");
+            javaMailSender.send(message);
+        } catch (Exception e) {
+            log.error("메일 전송 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("메일 전송에 실패했습니다. 관리자에게 문의하세요.", e);
+        }
 
-        // SMTP가 없는 개발 환경용:
-        log.info("임시 비밀번호 발송 대상 {}: {}", toEmail, tempPassword);
+        log.info("임시 비밀번호 발송 성공: {}", toEmail);
     }
 
     private String createVerificationCode() {
