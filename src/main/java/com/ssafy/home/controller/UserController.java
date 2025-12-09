@@ -14,6 +14,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final com.ssafy.home.util.JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody User user) {
@@ -28,14 +29,48 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest, jakarta.servlet.http.HttpServletResponse response) {
         try {
             String email = loginRequest.get("email");
             String password = loginRequest.get("password");
             Map<String, String> result = userService.login(email, password);
-            return ResponseEntity.ok(result);
+            
+            String refreshToken = result.get("refreshToken");
+            String accessToken = result.get("accessToken");
+            String name = result.get("name");
+
+            // Refresh Token을 HttpOnly 쿠키로 설정
+            org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
+                    .path("/")
+                    .sameSite("Strict")
+                    .httpOnly(true)
+                    .secure(false) // 로컬 개발 환경에서는 false, 배포 시 true 권장
+                    .maxAge(60 * 60 * 24 * 7) // 7일
+                    .build();
+            response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+
+            return ResponseEntity.ok(Map.of("accessToken", accessToken, "name", name));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<?> reissue(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Invalid or missing Refresh Token");
+        }
+
+        try {
+            String email = jwtTokenProvider.getEmail(refreshToken);
+            // 실제로는 DB에서 User 정보를 조회하여 Role 등을 가져와야 함.
+            // 여기서는 간단히 User 정보를 조회
+            User user = userService.getUser(email);
+            String newAccessToken = jwtTokenProvider.createAccessToken(email, user.getRole().name());
+
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Failed to reissue token");
         }
     }
 

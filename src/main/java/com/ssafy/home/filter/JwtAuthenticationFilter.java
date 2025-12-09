@@ -25,7 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtTokenProvider.resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (token != null) {
+            jwtTokenProvider.validateTokenThrows(token); // 예외 발생 시 JwtExceptionFilter에서 처리
             String email = jwtTokenProvider.getEmail(token);
             
             // 실제 앱에서는 DB에서 더 많은 정보를 로드할 수 있지만, JWT의 무상태성을 위해

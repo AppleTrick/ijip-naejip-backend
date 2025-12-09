@@ -68,23 +68,25 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             user = userMapper.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         }
 
-        String token = jwtTokenProvider.createToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
         
         // 프론트엔드로 리다이렉트 (토큰 전달 - 쿠키 방식)
         // 로컬 개발 환경 가정: http://localhost:5173/oauth/callback
         
         // 쿠키 생성 (ResponseCookie 사용)
-        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("accessToken", token)
+        org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
                 .path("/")
-                .sameSite("Lax")
-                .httpOnly(false)
+                .sameSite("Strict")
+                .httpOnly(true)
                 .secure(false)
-                .maxAge(60)
+                .maxAge(60 * 60 * 24 * 7)
                 .build();
         
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
-        UriComponentsBuilder targetUrlBuilder = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback");
+        UriComponentsBuilder targetUrlBuilder = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
+                .queryParam("accessToken", accessToken);
 
         if (user.getAgeGroup() == null) {
             targetUrlBuilder.queryParam("needsAdditionalInfo", "true");

@@ -29,6 +29,10 @@ public class SecurityConfig {
     private final com.ssafy.home.service.CustomOAuth2UserService customOAuth2UserService;
     private final com.ssafy.home.oauth.handler.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
+    private final com.ssafy.home.filter.JwtExceptionFilter jwtExceptionFilter;
+    private final com.ssafy.home.filter.JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final com.ssafy.home.filter.JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -42,6 +46,10 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(jwtAccessDeniedHandler)
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
@@ -56,7 +64,8 @@ public class SecurityConfig {
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(oAuth2LoginSuccessHandler)
             )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtExceptionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

@@ -44,8 +44,14 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtTokenProvider.createToken(user.getEmail(), user.getRole().name());
-        return Map.of("token", token, "name", user.getName());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+        
+        return Map.of(
+            "accessToken", accessToken,
+            "refreshToken", refreshToken,
+            "name", user.getName()
+        );
     }
 
     @Override
@@ -102,14 +108,7 @@ public class UserServiceImpl implements UserService {
         if (user.getJob() != null) existingUser.setJob(user.getJob());
         if (user.getGender() != null) existingUser.setGender(user.getGender());
         if (user.getMaritalStatus() != null) existingUser.setMaritalStatus(user.getMaritalStatus());
-        if (user.getAppPush() != null) existingUser.setAppPush(user.getAppPush());
-        if (user.getEmailNotification() != null) existingUser.setEmailNotification(user.getEmailNotification());
-        if (user.getMarketingNotification() != null) existingUser.setMarketingNotification(user.getMarketingNotification());
-        if (user.getMyHouseName() != null) existingUser.setMyHouseName(user.getMyHouseName());
-        if (user.getMyHouseAddress() != null) existingUser.setMyHouseAddress(user.getMyHouseAddress());
-        if (user.getMyHouseArea() != null) existingUser.setMyHouseArea(user.getMyHouseArea());
-        if (user.getMyHouseFloor() != null) existingUser.setMyHouseFloor(user.getMyHouseFloor());
-        if (user.getMyHousePrice() != null) existingUser.setMyHousePrice(user.getMyHousePrice());
+
         
         userMapper.update(existingUser);
     }

@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 
 @Slf4j
@@ -20,8 +19,8 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:default_secret_key_must_be_at_least_32_bytes_long_for_security}")
     private String secretKey;
 
-    @Value("${jwt.expiration:3600000}") // 1시간
-    private long validityInMilliseconds;
+    private final long accessTokenValidityInMilliseconds = 1000 * 60 * 60; // 1시간
+    private final long refreshTokenValidityInMilliseconds = 1000 * 60 * 60 * 24 * 7; // 7일
 
     private Key key;
 
@@ -31,12 +30,12 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String createToken(String email, String role) {
+    public String createAccessToken(String email, String role) {
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("role", role);
 
         Date now = new Date();
-        Date validity = new Date(now.getTime() + validityInMilliseconds);
+        Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -44,6 +43,23 @@ public class JwtTokenProvider {
                 .setExpiration(validity)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String createRefreshToken(String email) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // 기존 코드와의 호환성을 위해 유지 (Access Token 생성)
+    public String createToken(String email, String role) {
+        return createAccessToken(email, role);
     }
 
     public String getEmail(String token) {
@@ -73,5 +89,9 @@ public class JwtTokenProvider {
             log.info("JWT token compact of handler are invalid.");
         }
         return false;
+    }
+
+    public void validateTokenThrows(String token) {
+        Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
     }
 }
