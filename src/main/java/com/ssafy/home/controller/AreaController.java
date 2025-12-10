@@ -30,7 +30,12 @@ public class AreaController {
             @RequestParam(value = "maxLat", required = false) Double maxLat,
             @RequestParam(value = "minLng", required = false) Double minLng,
             @RequestParam(value = "maxLng", required = false) Double maxLng,
-            @RequestParam(value = "scope", required = false) AreaScope scope) {
+            @RequestParam(value = "scope", required = false) AreaScope scope,
+            @RequestParam(value = "minPrice", required = false) Integer minPrice,
+            @RequestParam(value = "maxPrice", required = false) Integer maxPrice,
+            @RequestParam(value = "minPyung", required = false) Integer minPyung,
+            @RequestParam(value = "maxPyung", required = false) Integer maxPyung
+            ) {
         boolean isLatLgnMissing = minLat == null || maxLat == null || minLng == null || maxLng == null;
 
         if (isLatLgnMissing) {

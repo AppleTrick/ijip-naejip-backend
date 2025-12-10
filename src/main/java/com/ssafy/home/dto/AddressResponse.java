@@ -16,6 +16,7 @@ public record AddressResponse(
 
         Double latitude,
         Double longitude,
-        Integer avgPrice
+        Integer avgPrice,
+        Integer primaryPyung
 ) {}
 

@@ -56,7 +56,8 @@ public class SecurityConfig {
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
                     "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**",
                     "/user/reset-password",
-                    "/oauth2/**", "/login/oauth2/code/**"
+                    "/oauth2/**", "/login/oauth2/code/**",
+                    "/api/v1/area/**", "/api/v1/dongcode/**", "/api/v1/apartments/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -77,7 +78,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

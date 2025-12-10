@@ -9,6 +9,7 @@ import java.util.List;
 
 @Mapper
 public interface AreaMapper {
+    // TODO: 33평으로 설정되어있는 Mock data를 실제 평균 가격으로 변경 필요
 
     @Select("""
         SELECT
@@ -16,12 +17,13 @@ public interface AreaMapper {
             sido_name AS sidoName,
             NULL AS gugunName,
             NULL AS dongName,
-            NULL,
-            NULL,
-            NULL,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
             latitude,
             longitude,
-            avg_price AS avgPrice
+            avg_price AS avgPrice,
+            NULL as primaryPyung
         FROM dongcodes
         WHERE gugun_name IS NULL
           AND latitude BETWEEN #{minLat} AND #{maxLat}
@@ -39,12 +41,13 @@ public interface AreaMapper {
             sido_name AS sidoName,
             gugun_name AS gugunName,
             NULL AS dongName,
-            NULL,
-            NULL,
-            NULL,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
             latitude,
             longitude,
-            avg_price AS avgPrice
+            avg_price AS avgPrice,
+            NULL as primaryPyung
         FROM dongcodes
         WHERE gugun_name IS NOT NULL AND dong_name IS NULL
             AND latitude BETWEEN #{minLat} AND #{maxLat}
@@ -62,12 +65,13 @@ public interface AreaMapper {
             sido_name AS sidoName,
             gugun_name AS gugunName,
             dong_name AS dongName,
-            NULL,
-            NULL,
-            NULL,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
             latitude,
             longitude,
-            avg_price AS avgPrice
+            avg_price AS avgPrice,
+            NULL as primaryPyung
         FROM dongcodes
         WHERE dong_name IS NOT NULL
             AND latitude BETWEEN #{minLat} AND #{maxLat}
@@ -87,10 +91,11 @@ public interface AreaMapper {
             dong_name AS dongName,
             apt_seq AS aptSeq,
             apt_nm AS aptName,
-            NULL,
+            NULL AS aptDong,
             hi.latitude,
             hi.longitude,
-            hi.avg_price AS avgPrice
+            hi.avg_price AS avgPrice,
+            33 as primaryPyung
         FROM houseinfos hi, dongcodes dc
         WHERE hi.dong_code = dc.dong_code
             AND hi.latitude BETWEEN #{minLat} AND #{maxLat}
@@ -113,7 +118,8 @@ public interface AreaMapper {
             ads.apt_dong AS aptDong,
             ads.latitude,
             ads.longitude,
-            ads.avg_price AS avgPrice
+            ads.avg_price AS avgPrice,
+            33 as primaryPyung
         FROM houseinfos hi, dongcodes dc, apt_dong_stats ads
         WHERE hi.dong_code = dc.dong_code
             AND hi.apt_seq = ads.apt_seq
