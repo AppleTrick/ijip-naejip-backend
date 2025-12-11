@@ -1,8 +1,6 @@
 package com.ssafy.home.controller;
 
-import com.ssafy.home.dto.AddressResponse;
-import com.ssafy.home.dto.AreaScope;
-import com.ssafy.home.dto.CommonResponse;
+import com.ssafy.home.dto.*;
 import com.ssafy.home.service.AreaService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +33,21 @@ public class AreaController {
             @RequestParam(value = "maxPrice", required = false) Integer maxPrice,
             @RequestParam(value = "minPyung", required = false) Integer minPyung,
             @RequestParam(value = "maxPyung", required = false) Integer maxPyung
-            ) {
-        List<AddressResponse> areas = areaService.searchAreaAddress(minLat, maxLat, minLng, maxLng, scope);
+        ) {
+
+        boolean isSearchForApt = (scope == AreaScope.APT || scope == AreaScope.APT_DONG);
+        boolean isSearchWithPyung = (minPyung != null || maxPyung != null);
+
+        if (!isSearchForApt && isSearchWithPyung) {
+            return ResponseEntity.badRequest().body(
+                CommonResponse.fail("400", "평수 필터는 아파트(APT) 또는 아파트 동(APT_DONG) 범위에서만 사용할 수 있습니다.")
+            );
+        }
+
+        GeoBoundParam geoBoundParam = new GeoBoundParam(minLat, maxLat, minLng, maxLng);
+        PriceRangeParam priceRangeParam = new PriceRangeParam(minPrice, maxPrice);
+        PyungRangeParam pyungRangeParam = new PyungRangeParam(minPyung, maxPyung);
+        List<AddressResponse> areas = areaService.searchAreaAddress(geoBoundParam, scope, priceRangeParam, pyungRangeParam);
         return ResponseEntity.ok(CommonResponse.success(areas));
     }
 }

@@ -1,6 +1,9 @@
 package com.ssafy.home.mapper;
 
 import com.ssafy.home.dto.AddressResponse;
+import com.ssafy.home.dto.GeoBoundParam;
+import com.ssafy.home.dto.PriceRangeParam;
+import com.ssafy.home.dto.PyungRangeParam;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -26,14 +29,12 @@ public interface AreaMapper {
             NULL as primaryPyung
         FROM dongcodes
         WHERE gugun_name IS NULL
-          AND latitude BETWEEN #{minLat} AND #{maxLat}
-          AND longitude BETWEEN #{minLng} AND #{maxLng}
+          AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+          AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         LIMIT 100
         """)
-    List<AddressResponse> findSidoByBoundingBox(@Param("minLat") Double minLat,
-                                            @Param("maxLat") Double maxLat,
-                                            @Param("minLng") Double minLng,
-                                            @Param("maxLng") Double maxLng);
+    List<AddressResponse> findSidoByBoundingBox(@Param("geo") GeoBoundParam geo,
+                                            @Param("price") PriceRangeParam price);
 
     @Select("""
         SELECT
@@ -50,14 +51,12 @@ public interface AreaMapper {
             NULL as primaryPyung
         FROM dongcodes
         WHERE gugun_name IS NOT NULL AND dong_name IS NULL
-            AND latitude BETWEEN #{minLat} AND #{maxLat}
-            AND longitude BETWEEN #{minLng} AND #{maxLng}
+            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         LIMIT 100
         """)
-    List<AddressResponse> findGugunByBoundingBox(@Param("minLat") Double minLat,
-                                                @Param("maxLat") Double maxLat,
-                                                @Param("minLng") Double minLng,
-                                                @Param("maxLng") Double maxLng);
+    List<AddressResponse> findGugunByBoundingBox(@Param("geo") GeoBoundParam geo,
+                                                @Param("price") PriceRangeParam price);
 
     @Select("""
         SELECT
@@ -74,14 +73,12 @@ public interface AreaMapper {
             NULL as primaryPyung
         FROM dongcodes
         WHERE dong_name IS NOT NULL
-            AND latitude BETWEEN #{minLat} AND #{maxLat}
-            AND longitude BETWEEN #{minLng} AND #{maxLng}
+            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         LIMIT 100
         """)
-    List<AddressResponse> findDongByBoundingBox(@Param("minLat") Double minLat,
-                                                @Param("maxLat") Double maxLat,
-                                                @Param("minLng") Double minLng,
-                                                @Param("maxLng") Double maxLng);
+    List<AddressResponse> findDongByBoundingBox(@Param("geo") GeoBoundParam geo,
+                                                @Param("price") PriceRangeParam price);
 
     @Select("""
         SELECT
@@ -98,14 +95,13 @@ public interface AreaMapper {
             33 as primaryPyung
         FROM houseinfos hi, dongcodes dc
         WHERE hi.dong_code = dc.dong_code
-            AND hi.latitude BETWEEN #{minLat} AND #{maxLat}
-            AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+            AND hi.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND hi.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         LIMIT 100
         """)
-    List<AddressResponse> findAptByBoundingBox(@Param("minLat") Double minLat,
-                                                @Param("maxLat") Double maxLat,
-                                                @Param("minLng") Double minLng,
-                                                @Param("maxLng") Double maxLng);
+    List<AddressResponse> findAptByBoundingBox(@Param("geo") GeoBoundParam geo,
+                                                @Param("price") PriceRangeParam price,
+                                                @Param("pyung") PyungRangeParam pyung);
 
     @Select("""
         SELECT
@@ -123,13 +119,11 @@ public interface AreaMapper {
         FROM houseinfos hi, dongcodes dc, apt_dong_stats ads
         WHERE hi.dong_code = dc.dong_code
             AND hi.apt_seq = ads.apt_seq
-            AND hi.latitude BETWEEN #{minLat} AND #{maxLat}
-            AND hi.longitude BETWEEN #{minLng} AND #{maxLng}
+            AND hi.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND hi.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         LIMIT 100
         """)
-    List<AddressResponse> findAptDongByBoundingBox(@Param("minLat") Double minLat,
-                                             @Param("maxLat") Double maxLat,
-                                             @Param("minLng") Double minLng,
-                                             @Param("maxLng") Double maxLng);
+    List<AddressResponse> findAptDongByBoundingBox(@Param("geo") GeoBoundParam geo,
+                                             @Param("price") PriceRangeParam price,
+                                             @Param("pyung") PyungRangeParam pyung);
 }
-

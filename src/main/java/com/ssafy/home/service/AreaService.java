@@ -1,11 +1,11 @@
 package com.ssafy.home.service;
 
-import com.ssafy.home.dto.AddressResponse;
-import com.ssafy.home.dto.AreaScope;
+import com.ssafy.home.dto.*;
 
 import java.util.List;
 
 public interface AreaService {
-    List<AddressResponse> searchAreaAddress(Double minLat, Double maxLat, Double minLng, Double maxLng, AreaScope scope);
+    List<AddressResponse> searchAreaAddress(GeoBoundParam geoBoundParam, AreaScope scope,
+                                            PriceRangeParam priceRangeParam, PyungRangeParam pyungRangeParam);
 }
 

@@ -1,7 +1,6 @@
 package com.ssafy.home.service.impl;
 
-import com.ssafy.home.dto.AddressResponse;
-import com.ssafy.home.dto.AreaScope;
+import com.ssafy.home.dto.*;
 import com.ssafy.home.repository.AreaRepository;
 import com.ssafy.home.service.AreaService;
 import lombok.RequiredArgsConstructor;
@@ -18,22 +17,23 @@ public class AreaServiceImpl implements AreaService {
     private final AreaRepository areaRepository;
 
     @Override
-    public List<AddressResponse> searchAreaAddress(Double minLat, Double maxLat, Double minLng, Double maxLng, AreaScope scope) {
+    public List<AddressResponse> searchAreaAddress(GeoBoundParam geoBoundParam, AreaScope scope,
+                                                   PriceRangeParam priceRangeParam, PyungRangeParam pyungRangeParam) {
         switch (scope) {
             case APT_DONG -> {
-                return areaRepository.findAptDongByBoundingBox(minLat, maxLat, minLng, maxLng);
+                return areaRepository.findAptDongByBoundingBox(geoBoundParam, priceRangeParam, pyungRangeParam);
             }
             case APT -> {
-                return areaRepository.findAptByBoundingBox(minLat, maxLat, minLng, maxLng);
+                return areaRepository.findAptByBoundingBox(geoBoundParam, priceRangeParam, pyungRangeParam);
             }
             case DONG -> {
-                return areaRepository.findDongByBoundingBox(minLat, maxLat, minLng, maxLng);
+                return areaRepository.findDongByBoundingBox(geoBoundParam, priceRangeParam);
             }
             case GUGUN -> {
-                return areaRepository.findGugunByBoundingBox(minLat, maxLat, minLng, maxLng);
+                return areaRepository.findGugunByBoundingBox(geoBoundParam, priceRangeParam);
             }
             case SIDO -> {
-                return areaRepository.findSidoByBoundingBox(minLat, maxLat, minLng, maxLng);
+                return areaRepository.findSidoByBoundingBox(geoBoundParam, priceRangeParam);
             }
             default -> {
                 log.warn("알 수 없는 범위(scope) 값: {}", scope);
