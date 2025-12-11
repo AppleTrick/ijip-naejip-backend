@@ -49,8 +49,11 @@ public class HouseDealController {
     @GetMapping("/apartments/{aptSeq}")
     public ResponseEntity<CommonResponse<ApartmentDetailResponse>> getApartmentDetail(
             @Parameter(description = "아파트 시퀀스 (예: 11680-1)", required = true)
-            @PathVariable("aptSeq") String aptSeq) {
-        log.info("아파트별 상세 정보 조회 요청 - aptSeq: {}", aptSeq);
+            @PathVariable("aptSeq") String aptSeq,
+            @Parameter(description = "평형 (예: 22)", required = false)
+            @RequestParam(value = "pyung", defaultValue = "all") String pyung
+    ) {
+        log.info("아파트별 상세 정보 조회 요청 - aptSeq: {}, pyung: {}", aptSeq, pyung);
         // TODO: Mock 데이터 대신 실제 구현 필요
         // Mock data for demonstration purposes
         ApartmentDetailResponse.ApartmentInfoDto info = new ApartmentDetailResponse.ApartmentInfoDto(
