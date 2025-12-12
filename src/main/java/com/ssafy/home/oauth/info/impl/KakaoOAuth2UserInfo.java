@@ -9,7 +9,8 @@ public class KakaoOAuth2UserInfo implements OAuth2UserInfo {
     private Map<String, Object> attributes;
     private Map<String, Object> kakaoAccount;
     private Map<String, Object> profile;
-
+    // 카카오 로그인 응답 구조상 kakao_account와 profile이 Map 형태이므로 unchecked로 지정
+    @SuppressWarnings("unchecked")
     public KakaoOAuth2UserInfo(Map<String, Object> attributes) {
         this.attributes = attributes;
         this.kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
