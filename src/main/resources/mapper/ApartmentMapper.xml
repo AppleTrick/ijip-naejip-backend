@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.home.mapper.ApartmentMapper">
+
+    <!-- 아파트 기본 정보 조회 -->
+    <select id="findApartmentInfo" resultType="com.ssafy.home.dto.mapper.ApartmentBasicInfo">
+        SELECT
+            hi.apt_seq AS aptSeq,
+            hi.apt_nm AS aptName,
+            CONCAT(
+                COALESCE(dc.sido_name, ''), ' ',
+                COALESCE(dc.gugun_name, ''), ' ',
+                COALESCE(dc.dong_name, ''), ' ',
+                COALESCE(hi.road_nm, ''), ' ',
+                COALESCE(hi.road_nm_bonbun, ''),
+                CASE
+                    WHEN hi.road_nm_bubun IS NOT NULL AND hi.road_nm_bubun != '' AND hi.road_nm_bubun != '0'
+                    THEN CONCAT('-', hi.road_nm_bubun)
+                    ELSE ''
+                END
+            ) AS address,
+            hi.avg_price AS avgPrice,
+            hi.build_year AS buildYear
+        FROM houseinfos hi
+        LEFT JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+        WHERE hi.apt_seq = #{aptSeq}
+    </select>
+
+    <!-- 아파트의 평형 타입 리스트 조회 -->
+    <select id="findPyungTypesByAptSeq" resultType="int">
+        SELECT DISTINCT pyung
+        FROM apt_pyung_stats
+        WHERE apt_seq = #{aptSeq}
+        ORDER BY pyung
+    </select>
+
+    <!-- 특정 평형이 존재하는지 확인 -->
+    <select id="existsPyung" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM apt_pyung_stats
+        WHERE apt_seq = #{aptSeq}
+          AND pyung = #{pyung}
+    </select>
+
+    <!-- 최근 거래 내역 조회 (평형 필터링 포함) -->
+    <select id="findRecentTransactions" resultType="com.ssafy.home.dto.mapper.TransactionRecord">
+        SELECT
+            hd.deal_date AS transactionDate,
+            hd.pyung AS pyungType,
+            hd.deal_amount AS dealAmount,
+            hd.floor AS floor,
+            hd.apt_dong AS aptDong
+        FROM housedeals hd
+        WHERE hd.apt_seq = #{aptSeq}
+        <if test="pyung != null">
+            AND hd.pyung = #{pyung}
+        </if>
+        ORDER BY hd.deal_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 월별 평균 가격 조회 (6개월) -->
+    <select id="findMonthlyPriceTrend" resultType="com.ssafy.home.dto.mapper.MonthlyPriceData">
+        SELECT
+            DATE_FORMAT(STR_TO_DATE(CAST(deal_date AS CHAR), '%Y%m%d'), '%Y-%m') AS month,
+            ROUND(AVG(deal_amount)) AS avgPrice,
+            COUNT(*) AS transactionCount
+        FROM housedeals
+        WHERE apt_seq = #{aptSeq}
+        <if test="pyung != null">
+            AND pyung = #{pyung}
+        </if>
+        AND deal_date >= CAST(CONCAT(#{startMonth}, '01') AS UNSIGNED)
+        AND deal_date <![CDATA[<=]]> CAST(CONCAT(#{endMonth}, '31') AS UNSIGNED)
+        GROUP BY DATE_FORMAT(STR_TO_DATE(CAST(deal_date AS CHAR), '%Y%m%d'), '%Y-%m')
+        ORDER BY month
+    </select>
+
+</mapper>
+
