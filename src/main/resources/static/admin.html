@@ -98,6 +98,73 @@
             border-color: #667eea;
         }
 
+        /* 범위 슬라이더 컨테이너 */
+        .range-slider-container {
+            position: relative;
+            height: 50px;
+            padding: 10px 0;
+        }
+
+        .range-slider {
+            position: absolute;
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        .range-slider::-webkit-slider-track {
+            width: 100%;
+            height: 5px;
+            background: #ddd;
+            border-radius: 5px;
+        }
+
+        .range-slider::-moz-range-track {
+            width: 100%;
+            height: 5px;
+            background: #ddd;
+            border-radius: 5px;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            background: #764ba2;
+        }
+
+        .range-slider::-moz-range-thumb:hover {
+            background: #764ba2;
+        }
+
+        .range-slider:nth-child(2) {
+            background: transparent;
+        }
+
         button {
             width: 100%;
             background: #667eea;
@@ -218,6 +285,34 @@
             </div>
 
             <div class="control-section">
+                <h3>💰 가격 필터</h3>
+                <div class="form-group">
+                    <label>가격 범위: <span id="priceRangeDisplay">0억 ~ 100억</span></label>
+                    <div class="range-slider-container">
+                        <input type="range" id="minPriceSlider" min="0" max="100" value="0" step="1" class="range-slider">
+                        <input type="range" id="maxPriceSlider" min="0" max="100" value="100" step="1" class="range-slider">
+                    </div>
+                </div>
+                <div class="info-box">
+                    평균 거래가격 기준으로 필터링됩니다. (천만원 단위)
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>📐 평수 필터</h3>
+                <div class="form-group">
+                    <label>평수 범위: <span id="pyungRangeDisplay">0평 ~ 100평</span></label>
+                    <div class="range-slider-container">
+                        <input type="range" id="minPyungSlider" min="0" max="100" value="0" step="1" class="range-slider">
+                        <input type="range" id="maxPyungSlider" min="0" max="100" value="100" step="1" class="range-slider">
+                    </div>
+                </div>
+                <div class="info-box">
+                    ⚠️ APT 또는 APT_DONG 범위에서만 사용 가능합니다.
+                </div>
+            </div>
+
+            <div class="control-section">
                 <h3>🔍 지역 검색</h3>
                 <button onclick="searchArea()">현재 지도 영역 검색</button>
                 <div id="searchResult" class="info-box" style="display: none;">
@@ -235,9 +330,10 @@
                 <h3>ℹ️ 사용 방법</h3>
                 <div class="info-box">
                     1. AreaScope를 선택하세요<br>
-                    2. 지도를 원하는 위치로 이동하세요<br>
-                    3. "현재 지도 영역 검색" 버튼을 누르세요<br>
-                    4. 검색된 지역에 마커가 표시됩니다
+                    2. 필요시 가격/평수 필터를 설정하세요<br>
+                    3. 지도를 원하는 위치로 이동하세요<br>
+                    4. "현재 지도 영역 검색" 버튼을 누르세요<br>
+                    5. 검색된 지역에 마커가 표시됩니다
                 </div>
             </div>
         </div>
@@ -263,6 +359,61 @@
         let customOverlays = []; // 말풍선 오버레이들
         let currentInfoWindow = null; // 현재 열려있는 상세 정보 인포윈도우
         const defaultCenter = new kakao.maps.LatLng(37.5665, 126.9780); // 서울 시청 기준
+
+        // 슬라이더 초기화
+        function initSliders() {
+            const minPriceSlider = document.getElementById('minPriceSlider');
+            const maxPriceSlider = document.getElementById('maxPriceSlider');
+            const minPyungSlider = document.getElementById('minPyungSlider');
+            const maxPyungSlider = document.getElementById('maxPyungSlider');
+
+            // 가격 슬라이더 이벤트
+            minPriceSlider.addEventListener('input', function() {
+                if (parseInt(this.value) > parseInt(maxPriceSlider.value)) {
+                    this.value = maxPriceSlider.value;
+                }
+                updatePriceDisplay();
+            });
+
+            maxPriceSlider.addEventListener('input', function() {
+                if (parseInt(this.value) < parseInt(minPriceSlider.value)) {
+                    this.value = minPriceSlider.value;
+                }
+                updatePriceDisplay();
+            });
+
+            // 평수 슬라이더 이벤트
+            minPyungSlider.addEventListener('input', function() {
+                if (parseInt(this.value) > parseInt(maxPyungSlider.value)) {
+                    this.value = maxPyungSlider.value;
+                }
+                updatePyungDisplay();
+            });
+
+            maxPyungSlider.addEventListener('input', function() {
+                if (parseInt(this.value) < parseInt(minPyungSlider.value)) {
+                    this.value = minPyungSlider.value;
+                }
+                updatePyungDisplay();
+            });
+
+            updatePriceDisplay();
+            updatePyungDisplay();
+        }
+
+        // 가격 표시 업데이트
+        function updatePriceDisplay() {
+            const minPrice = document.getElementById('minPriceSlider').value;
+            const maxPrice = document.getElementById('maxPriceSlider').value;
+            document.getElementById('priceRangeDisplay').textContent = `${minPrice}억 ~ ${maxPrice}억`;
+        }
+
+        // 평수 표시 업데이트
+        function updatePyungDisplay() {
+            const minPyung = document.getElementById('minPyungSlider').value;
+            const maxPyung = document.getElementById('maxPyungSlider').value;
+            document.getElementById('pyungRangeDisplay').textContent = `${minPyung}평 ~ ${maxPyung}평`;
+        }
 
         function initMap() {
             const container = document.getElementById('map');
@@ -426,6 +577,18 @@
                 scope: scope
             });
 
+            // 가격 필터 추가 (억 단위를 만원 단위로 변환: 1억 = 10000만원)
+            const minPriceValue = parseInt(document.getElementById('minPriceSlider').value);
+            const maxPriceValue = parseInt(document.getElementById('maxPriceSlider').value);
+            if (minPriceValue > 0) params.append('minPrice', minPriceValue * 10000);
+            if (maxPriceValue < 100) params.append('maxPrice', maxPriceValue * 10000);
+
+            // 평수 필터 추가
+            const minPyungValue = parseInt(document.getElementById('minPyungSlider').value);
+            const maxPyungValue = parseInt(document.getElementById('maxPyungSlider').value);
+            if (minPyungValue > 0) params.append('minPyung', minPyungValue);
+            if (maxPyungValue < 100) params.append('maxPyung', maxPyungValue);
+
             const resultBox = document.getElementById('searchResult');
             resultBox.style.display = 'block';
             resultBox.className = 'info-box';
@@ -457,6 +620,11 @@
                                 ? `평균 가격: ${(area.avgPrice / 10000).toFixed(0)}억원`
                                 : '가격 정보 없음';
 
+                            // 대표 평수 포맷팅
+                            const primaryPyungText = area.primaryPyung
+                                ? `대표 평수: ${area.primaryPyung}평`
+                                : '';
+
                             if (scope === 'APT_DONG') {
                                 // APT_DONG: 아파트 동별 정보
                                 const aptNameWithDong = area.aptName
@@ -466,8 +634,12 @@
                                 if (area.avgPrice) {
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
                                 }
+                                if (area.primaryPyung) {
+                                    title += ` ${area.primaryPyung}평`;
+                                }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
                                         ${avgPriceText}<br>
+                                        ${primaryPyungText ? primaryPyungText + '<br>' : ''}
                                         아파트동: ${area.aptDong || 'N/A'}<br>
                                         아파트코드: ${area.aptSeq || 'N/A'}`;
                             } else if (scope === 'APT') {
@@ -475,8 +647,12 @@
                                 if (area.avgPrice) {
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
                                 }
+                                if (area.primaryPyung) {
+                                    title += ` ${area.primaryPyung}평`;
+                                }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
                                         ${avgPriceText}<br>
+                                        ${primaryPyungText ? primaryPyungText + '<br>' : ''}
                                         아파트코드: ${area.aptSeq || 'N/A'}`;
                             } else if (scope === 'DONG') {
                                 title = area.dongName || '동 정보 없음';
@@ -524,8 +700,11 @@
             }
         }
 
-        // 페이지 로드 시 지도 초기화
-        window.addEventListener('load', initMap);
+        // 페이지 로드 시 지도 및 슬라이더 초기화
+        window.addEventListener('load', function() {
+            initMap();
+            initSliders();
+        });
     </script>
 </body>
 </html>

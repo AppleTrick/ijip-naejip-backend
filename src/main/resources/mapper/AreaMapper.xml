@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.ssafy.home.mapper.AreaMapper">
+    <!-- 법정시 단위 조회 -->
+    <select id="findSidoByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        SELECT
+            dong_code AS dongCode,
+            sido_name AS sidoName,
+            NULL AS gugunName,
+            NULL AS dongName,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
+            latitude,
+            longitude,
+            avg_price AS avgPrice,
+            NULL as primaryPyung
+        FROM dongcodes
+        WHERE gugun_name IS NULL
+            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        <if test="price != null and price.minPrice != null">
+            AND avg_price &gt;= #{price.minPrice}
+        </if>
+        <if test="price != null and price.maxPrice != null">
+            AND avg_price &lt;= #{price.maxPrice}
+        </if>
+        LIMIT 100
+    </select>
+
+    <!-- 법정구 단위 조회 -->
+    <select id="findGugunByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        SELECT
+            dong_code AS dongCode,
+            sido_name AS sidoName,
+            gugun_name AS gugunName,
+            NULL AS dongName,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
+            latitude,
+            longitude,
+            avg_price AS avgPrice,
+            NULL as primaryPyung
+        FROM dongcodes
+        WHERE gugun_name IS NOT NULL AND dong_name IS NULL
+            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        <if test="price != null and price.minPrice != null">
+            AND avg_price &gt;= #{price.minPrice}
+        </if>
+        <if test="price != null and price.maxPrice != null">
+            AND avg_price &lt;= #{price.maxPrice}
+        </if>
+        LIMIT 100
+    </select>
+
+    <!-- 법정동 단위 조회 -->
+    <select id="findDongByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        SELECT
+            dong_code AS dongCode,
+            sido_name AS sidoName,
+            gugun_name AS gugunName,
+            dong_name AS dongName,
+            NULL AS aptSeq,
+            NULL AS aptName,
+            NULL AS aptDong,
+            latitude,
+            longitude,
+            avg_price AS avgPrice,
+            NULL as primaryPyung
+        FROM dongcodes
+        WHERE dong_name IS NOT NULL
+            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        <if test="price != null and price.minPrice != null">
+            AND avg_price &gt;= #{price.minPrice}
+        </if>
+        <if test="price != null and price.maxPrice != null">
+            AND avg_price &lt;= #{price.maxPrice}
+        </if>
+        LIMIT 100
+    </select>
+
+    <!-- 아파트 단위 조회: apt_pyung_stats 사용 -->
+    <select id="findAptByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        SELECT
+            rep.dong_code AS dongCode,
+            dc.sido_name AS sidoName,
+            dc.gugun_name AS gugunName,
+            dc.dong_name AS dongName,
+            rep.apt_seq AS aptSeq,
+            rep.apt_nm AS aptName,
+            NULL AS aptDong,
+            rep.latitude AS latitude,
+            rep.longitude AS longitude,
+            rep.avg_price AS avgPrice,
+            rep.pyung AS primaryPyung
+        FROM dongcodes dc
+        INNER JOIN (
+            -- 좌표 범위 내 대표 평형 선택
+            SELECT
+                apt_seq,
+                dong_code,
+                apt_nm,
+                latitude,
+                longitude,
+                pyung, -- 대표 평형
+                avg_price,
+                deal_count
+            FROM (
+                SELECT
+                    aps.apt_seq,
+                    hi.dong_code,
+                    hi.apt_nm,
+                    hi.latitude,
+                    hi.longitude,
+                    aps.pyung,
+                    aps.avg_price,
+                    aps.deal_count,
+                    ROW_NUMBER() OVER (PARTITION BY aps.apt_seq ORDER BY aps.deal_count DESC, aps.pyung ASC) AS rn
+                FROM apt_pyung_stats aps
+                INNER JOIN houseinfos hi
+                    ON aps.apt_seq = hi.apt_seq
+                -- 1. 범위 기반 필터링
+                WHERE hi.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+                    AND hi.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+                -- 2. 평형 및 가격 필터링
+                <if test="pyung != null and pyung.minPyung != null">
+                    AND aps.pyung &gt;= #{pyung.minPyung}
+                </if>
+                <if test="pyung != null and pyung.maxPyung != null">
+                    AND aps.pyung &lt;= #{pyung.maxPyung}
+                </if>
+                <if test="price != null and price.minPrice != null">
+                    AND aps.avg_price &gt;= #{price.minPrice}
+                </if>
+                <if test="price != null and price.maxPrice != null">
+                    AND aps.avg_price &lt;= #{price.maxPrice}
+                </if>
+            ) ranked
+            WHERE rn = 1
+        ) rep ON dc.dong_code = rep.dong_code
+        LIMIT 100
+    </select>
+
+    <!-- 아파트 동 단위 조회: apt_dong_pyung_stats 사용 -->
+    <select id="findAptDongByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        SELECT
+            hi.dong_code AS dongCode,
+            dc.sido_name AS sidoName,
+            dc.gugun_name AS gugunName,
+            dc.dong_name AS dongName,
+            hi.apt_seq AS aptSeq,
+            hi.apt_nm AS aptName,
+            rep.apt_dong AS aptDong,
+            rep.latitude AS latitude,
+            rep.longitude AS longitude,
+            rep.avg_price AS avgPrice,
+            rep.pyung AS primaryPyung
+        FROM houseinfos hi
+        INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+        INNER JOIN (
+            -- 좌표 범위 내 대표 평형 선택
+            SELECT
+                apt_seq,
+                apt_dong,
+                latitude,
+                longitude,
+                pyung, -- 대표 평형
+                avg_price,
+                deal_count
+            FROM (
+                SELECT
+                    ads.apt_seq,
+                    ads.apt_dong,
+                    ads.latitude,
+                    ads.longitude,
+                    adps.pyung,
+                    adps.avg_price,
+                    adps.deal_count,
+                    ROW_NUMBER() OVER (PARTITION BY ads.apt_seq, ads.apt_dong ORDER BY adps.deal_count DESC, pyung ASC) AS rn
+                FROM apt_dong_pyung_stats adps
+                INNER JOIN apt_dong_stats ads
+                    ON adps.apt_seq = ads.apt_seq
+                    AND adps.apt_dong = ads.apt_dong
+                -- 1. 범위 기반 필터링
+                WHERE ads.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+                    AND ads.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+                -- 2. 평형 및 가격 필터링
+                <if test="pyung != null and pyung.minPyung != null">
+                    AND adps.pyung &gt;= #{pyung.minPyung}
+                </if>
+                <if test="pyung != null and pyung.maxPyung != null">
+                    AND adps.pyung &lt;= #{pyung.maxPyung}
+                </if>
+                <if test="price != null and price.minPrice != null">
+                    AND adps.avg_price &gt;= #{price.minPrice}
+                </if>
+                <if test="price != null and price.maxPrice != null">
+                    AND adps.avg_price &lt;= #{price.maxPrice}
+                </if>
+            ) ranked
+            WHERE rn = 1
+        ) rep ON hi.apt_seq = rep.apt_seq
+        LIMIT 100
+    </select>
+</mapper>
+
