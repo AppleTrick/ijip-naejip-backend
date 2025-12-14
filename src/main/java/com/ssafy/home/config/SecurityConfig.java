@@ -53,6 +53,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
+                    "/error",
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger/**", "/api-docs/**",
                     "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**",
                     "/user/reset-password",
