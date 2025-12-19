@@ -77,7 +77,7 @@ public class ApartmentServiceImpl implements ApartmentService {
             ))
             .toList();
 
-        // 6. 6개월 가격 추이 계산
+        // 6. 3년 가격 추이 계산
         ApartmentDetailResponse.PriceTrendDto priceTrend = calculatePriceTrend(aptSeq, pyungInt);
 
         log.info("아파트 상세 정보 조회 완료 - aptSeq: {}, 거래 내역 수: {}", aptSeq, transactionDtos.size());
@@ -91,12 +91,12 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     /**
-     * 6개월 가격 추이 계산
+     * 3년 가격 추이 계산
      */
     private ApartmentDetailResponse.PriceTrendDto calculatePriceTrend(String aptSeq, Integer pyungInt) {
         LocalDate now = LocalDate.now();
         String endMonth = now.format(DateTimeFormatter.ofPattern("yyyyMM"));
-        String startMonth = now.minusMonths(5).format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String startMonth = now.minusMonths(35).format(DateTimeFormatter.ofPattern("yyyyMM"));
 
         log.debug("가격 추이 조회 - startMonth: {}, endMonth: {}", startMonth, endMonth);
 
@@ -105,11 +105,11 @@ public class ApartmentServiceImpl implements ApartmentService {
             aptSeq, pyungInt, startMonth, endMonth
         );
 
-        // 6개월치 데이터 생성 (거래 없는 월은 이전 월 데이터로 채우기)
+        // 3년치 데이터 생성 (거래 없는 월은 이전 월 데이터로 채우기)
         List<ApartmentDetailResponse.PriceTrendDto.PriceDataPointDto> dataPoints = new ArrayList<>();
         Integer lastAvgPrice = 0;
 
-        for (int i = 5; i >= 0; i--) {
+        for (int i = 35; i >= 0; i--) {
             LocalDate targetMonth = now.minusMonths(i);
             String monthStr = targetMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
