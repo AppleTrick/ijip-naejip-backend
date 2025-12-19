@@ -55,17 +55,28 @@ public class ApartmentServiceImpl implements ApartmentService {
             .map(String::valueOf)
             .toList();
 
-        // 4. 아파트 기본 정보 DTO 생성
+        // 4. 평형별 평균 가격 조회
+        Integer avgPrice = aptInfo.avgPrice(); // 기본값: 전체 평균
+        if (pyungInt != null) {
+            // 특정 평형이 지정된 경우, 해당 평형의 평균 가격 조회
+            Integer pyungAvgPrice = apartmentMapper.findAvgPriceByPyung(aptSeq, pyungInt);
+            if (pyungAvgPrice != null) {
+                avgPrice = pyungAvgPrice;
+                log.debug("평형별 평균 가격 조회 - pyung: {}, avgPrice: {}", pyungInt, avgPrice);
+            }
+        }
+
+        // 5. 아파트 기본 정보 DTO 생성
         ApartmentDetailResponse.ApartmentInfoDto infoDto = new ApartmentDetailResponse.ApartmentInfoDto(
             aptInfo.aptSeq(),
             aptInfo.aptName(),
             aptInfo.address(),
-            aptInfo.avgPrice(),
+            avgPrice,
             aptInfo.buildYear(),
             pyungTypeStrings
         );
 
-        // 5. 최근 거래 내역 조회
+        // 6. 최근 거래 내역 조회
         List<TransactionRecord> transactions = apartmentMapper.findRecentTransactions(aptSeq, pyungInt, 10);
         List<ApartmentDetailResponse.RecentTransactionDto> transactionDtos = transactions.stream()
             .map(t -> new ApartmentDetailResponse.RecentTransactionDto(
@@ -77,7 +88,7 @@ public class ApartmentServiceImpl implements ApartmentService {
             ))
             .toList();
 
-        // 6. 3년 가격 추이 계산
+        // 7. 3년 가격 추이 계산
         ApartmentDetailResponse.PriceTrendDto priceTrend = calculatePriceTrend(aptSeq, pyungInt);
 
         log.info("아파트 상세 정보 조회 완료 - aptSeq: {}, 거래 내역 수: {}", aptSeq, transactionDtos.size());

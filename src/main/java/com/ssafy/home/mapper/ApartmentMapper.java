@@ -19,6 +19,14 @@ public interface ApartmentMapper {
     ApartmentBasicInfo findApartmentInfo(@Param("aptSeq") String aptSeq);
 
     /**
+     * 특정 평형의 평균 가격 조회
+     * @param aptSeq 아파트 고유번호
+     * @param pyung 평형
+     * @return 평균 가격
+     */
+    Integer findAvgPriceByPyung(@Param("aptSeq") String aptSeq, @Param("pyung") int pyung);
+
+    /**
      * 아파트의 평형 타입 리스트 조회
      * @param aptSeq 아파트 고유번호
      * @return 평형 타입 리스트

@@ -29,6 +29,14 @@
         WHERE hi.apt_seq = #{aptSeq}
     </select>
 
+    <!-- 특정 평형의 평균 가격 조회 -->
+    <select id="findAvgPriceByPyung" resultType="int">
+        SELECT avg_price
+        FROM apt_pyung_stats
+        WHERE apt_seq = #{aptSeq}
+          AND pyung = #{pyung}
+    </select>
+
     <!-- 아파트의 평형 타입 리스트 조회 -->
     <select id="findPyungTypesByAptSeq" resultType="int">
         SELECT DISTINCT pyung
