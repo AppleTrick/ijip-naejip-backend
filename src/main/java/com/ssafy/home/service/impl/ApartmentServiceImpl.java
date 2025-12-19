@@ -116,9 +116,17 @@ public class ApartmentServiceImpl implements ApartmentService {
             aptSeq, pyungInt, startMonth, endMonth
         );
 
+        // 검색 범위 이전의 가장 최근 거래 평균가 조회 (초기값으로 사용)
+        Integer lastAvgPrice = apartmentMapper.findLastAvgPriceBeforeMonth(aptSeq, pyungInt, startMonth);
+        if (lastAvgPrice == null) {
+            lastAvgPrice = 0;
+            log.debug("검색 범위 이전 거래 데이터 없음 - 초기값 0으로 설정");
+        } else {
+            log.debug("검색 범위 이전 평균가 조회 완료 - lastAvgPrice: {}", lastAvgPrice);
+        }
+
         // 3년치 데이터 생성 (거래 없는 월은 이전 월 데이터로 채우기)
         List<ApartmentDetailResponse.PriceTrendDto.PriceDataPointDto> dataPoints = new ArrayList<>();
-        Integer lastAvgPrice = 0;
 
         for (int i = 35; i >= 0; i--) {
             LocalDate targetMonth = now.minusMonths(i);

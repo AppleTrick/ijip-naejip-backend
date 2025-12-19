@@ -68,5 +68,18 @@ public interface ApartmentMapper {
         @Param("startMonth") String startMonth,
         @Param("endMonth") String endMonth
     );
+
+    /**
+     * 특정 날짜 이전의 가장 최근 거래 평균 가격 조회
+     * @param aptSeq 아파트 고유번호
+     * @param pyung 평형 (null이면 전체)
+     * @param beforeMonth 기준 월 (YYYYMM) - 이 날짜 이전의 거래 조회
+     * @return 평균 가격 (거래가 없으면 null)
+     */
+    Integer findLastAvgPriceBeforeMonth(
+        @Param("aptSeq") String aptSeq,
+        @Param("pyung") Integer pyung,
+        @Param("beforeMonth") String beforeMonth
+    );
 }
 

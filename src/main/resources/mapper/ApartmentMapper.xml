@@ -70,7 +70,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 월별 평균 가격 조회 (6개월) -->
+    <!-- 월별 평균 가격 조회 -->
     <select id="findMonthlyPriceTrend" resultType="com.ssafy.home.dto.mapper.MonthlyPriceData">
         SELECT
             DATE_FORMAT(STR_TO_DATE(CAST(deal_date AS CHAR), '%Y%m%d'), '%Y-%m') AS month,
@@ -85,6 +85,27 @@
         AND deal_date <![CDATA[<=]]> CAST(CONCAT(#{endMonth}, '31') AS UNSIGNED)
         GROUP BY DATE_FORMAT(STR_TO_DATE(CAST(deal_date AS CHAR), '%Y%m%d'), '%Y-%m')
         ORDER BY month
+    </select>
+
+    <!-- 특정 날짜 이전의 가장 최근 월의 거래 평균 가격 조회 -->
+    <select id="findLastAvgPriceBeforeMonth" resultType="int">
+        SELECT ROUND(AVG(deal_amount)) AS avgPrice
+        FROM housedeals
+        WHERE apt_seq = #{aptSeq}
+        <if test="pyung != null">
+            AND pyung = #{pyung}
+        </if>
+        AND DATE_FORMAT(deal_date, '%Y-%m') = (
+            SELECT DATE_FORMAT(deal_date, '%Y-%m')
+            FROM housedeals
+            WHERE apt_seq = #{aptSeq}
+            <if test="pyung != null">
+                AND pyung = #{pyung}
+            </if>
+            AND deal_date <![CDATA[<]]> CAST(CONCAT(#{beforeMonth}, '01') AS UNSIGNED)
+            ORDER BY deal_date DESC
+            LIMIT 1
+        )
     </select>
 
 </mapper>
