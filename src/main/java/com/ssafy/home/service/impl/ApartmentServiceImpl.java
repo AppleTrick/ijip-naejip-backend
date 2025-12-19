@@ -57,7 +57,7 @@ public class ApartmentServiceImpl implements ApartmentService {
 
         // 4. 아파트 기본 정보 DTO 생성
         ApartmentDetailResponse.ApartmentInfoDto infoDto = new ApartmentDetailResponse.ApartmentInfoDto(
-            parseLongSafely(aptInfo.aptSeq()),
+            aptInfo.aptSeq(),
             aptInfo.aptName(),
             aptInfo.address(),
             aptInfo.avgPrice(),
@@ -166,22 +166,6 @@ public class ApartmentServiceImpl implements ApartmentService {
         } catch (NumberFormatException e) {
             log.warn("정수 변환 실패: {}", value);
             return 0;
-        }
-    }
-
-    /**
-     * String을 Long으로 안전하게 변환
-     */
-    private Long parseLongSafely(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return 0L;
-        }
-        try {
-            // aptSeq가 "11680-1" 같은 형식일 수 있으므로 숫자가 아닌 경우 해시코드 사용
-            return Long.parseLong(value.replaceAll("[^0-9]", ""));
-        } catch (NumberFormatException e) {
-            log.warn("Long 변환 실패: {}, 해시코드 사용", value);
-            return (long) value.hashCode();
         }
     }
 }

@@ -21,7 +21,7 @@ public record ApartmentDetailResponse(
     @Schema(description = "아파트 기본 정보")
     public record ApartmentInfoDto (
         @Schema(description = "아파트 고유번호", example = "12345")
-        Long aptSeq,
+        String aptSeq,
 
         @Schema(description = "아파트 명", example = "잠실 엘스 아파트")
         String aptName,
