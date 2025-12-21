@@ -108,5 +108,37 @@
         )
     </select>
 
+    <!-- 키워드 기반 아파트 검색 -->
+    <select id="searchApartmentsByKeywords" resultType="com.ssafy.home.dto.mapper.ApartmentBasicInfo">
+        SELECT
+            hi.apt_seq AS aptSeq,
+            hi.apt_nm AS aptName,
+            CONCAT(
+                COALESCE(dc.sido_name, ''), ' ',
+                COALESCE(dc.gugun_name, ''), ' ',
+                COALESCE(dc.dong_name, ''), ' ',
+                COALESCE(hi.road_nm, ''), ' ',
+                COALESCE(hi.road_nm_bonbun, ''),
+                CASE
+                    WHEN hi.road_nm_bubun IS NOT NULL AND hi.road_nm_bubun != '' AND hi.road_nm_bubun != '0'
+                    THEN CONCAT('-', hi.road_nm_bubun)
+                    ELSE ''
+                END
+            ) AS address,
+            hi.avg_price AS avgPrice,
+            hi.build_year AS buildYear
+        FROM houseinfos hi
+        LEFT JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+        WHERE
+        <foreach collection="keywords" item="keyword" separator="OR">
+            hi.apt_nm LIKE CONCAT('%', #{keyword}, '%')
+            OR dc.sido_name LIKE CONCAT('%', #{keyword}, '%')
+            OR dc.gugun_name LIKE CONCAT('%', #{keyword}, '%')
+            OR dc.dong_name LIKE CONCAT('%', #{keyword}, '%')
+            OR hi.road_nm LIKE CONCAT('%', #{keyword}, '%')
+        </foreach>
+        LIMIT 10
+    </select>
+
 </mapper>
 
