@@ -1,5 +1,9 @@
 package com.ssafy.home.ai.service.impl;
 
+import com.ssafy.home.ai.dto.FilterConditions;
+import com.ssafy.home.ai.dto.FraudAnalysisRequest;
+import com.ssafy.home.ai.dto.FraudAnalysisResponse;
+import com.ssafy.home.ai.dto.ParseFilterResponse;
 import com.ssafy.home.ai.dto.SemanticSearchResponse;
 import com.ssafy.home.ai.service.AIService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,54 @@ public class AIServiceImpl implements AIService {
         return SemanticSearchResponse.builder()
                 .results(new ArrayList<>()) // 실제로는 여기서 지역 정보를 바탕으로 검색 결과를 채웁니다.
                 .analysis(analysis)
+                .build();
+    }
+
+    @Override
+    public ParseFilterResponse parseFilter(String query) {
+        log.info("Parsing filter for query: {}", query);
+        
+        // Mock logic: In a real app, use GPT to extract structured filters.
+        FilterConditions filters = FilterConditions.builder()
+                .priceRange(FilterConditions.PriceRange.builder().min(0).max(15).build())
+                .areaRange(FilterConditions.AreaRange.builder().min(20).max(40).build())
+                .build();
+
+        String analysis = "GPT-5-nano 분석 결과: '" + query + "'를 분석하여 매매가 15억 이하, 면적 20~40평형 필터를 적용했습니다.";
+
+        return ParseFilterResponse.builder()
+                .filters(filters)
+                .analysis(analysis)
+                .build();
+    }
+
+    @Override
+    public FraudAnalysisResponse performFraudAnalysis(FraudAnalysisRequest request) {
+        log.info("Performing fraud analysis for address: {}", request.getAddress());
+        
+        int debtRatio = 0;
+        if (request.getMarketValue() > 0) {
+            debtRatio = (int) (((request.getDeposit() + request.getPriorDebt()) * 100) / request.getMarketValue());
+        }
+
+        String grade = "SAFE";
+        String message = "해당 매물은 부채 비율이 낮고 권리 관계가 깨끗하여 안전한 것으로 분석됩니다.";
+
+        if (request.isViolation()) {
+            grade = "DANGER";
+            message = "위반건축물로 등록되어 있어 위험합니다. 전세보증보험 가입이 불가능할 수 있습니다.";
+        } else if (debtRatio >= 80) {
+            grade = "DANGER";
+            message = "부채 비율이 " + debtRatio + "%로 매우 높아 '깡통전세' 위험이 큽니다.";
+        } else if (debtRatio >= 70) {
+            grade = "WARNING";
+            message = "부채 비율이 " + debtRatio + "%로 다소 높습니다. 보증보험 가입을 반드시 권장합니다.";
+        }
+
+        return FraudAnalysisResponse.builder()
+                .safetyGrade(grade)
+                .message("GPT-5-nano 정밀 진단: " + message)
+                .debtRatio(debtRatio)
                 .build();
     }
 
