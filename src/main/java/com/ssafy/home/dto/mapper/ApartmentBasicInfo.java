@@ -5,7 +5,9 @@ public record ApartmentBasicInfo(
     String aptName,
     String address,
     Integer avgPrice,
-    Integer buildYear
+    Integer buildYear,
+    String latitude,
+    String longitude
 ) {
 }
 

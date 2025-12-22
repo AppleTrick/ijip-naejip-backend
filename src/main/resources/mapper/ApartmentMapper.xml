@@ -23,7 +23,9 @@
                 END
             ) AS address,
             hi.avg_price AS avgPrice,
-            hi.build_year AS buildYear
+            hi.build_year AS buildYear,
+            hi.latitude AS latitude,
+            hi.longitude AS longitude
         FROM houseinfos hi
         LEFT JOIN dongcodes dc ON hi.dong_code = dc.dong_code
         WHERE hi.apt_seq = #{aptSeq}
@@ -126,7 +128,9 @@
                 END
             ) AS address,
             hi.avg_price AS avgPrice,
-            hi.build_year AS buildYear
+            hi.build_year AS buildYear,
+            hi.latitude AS latitude,
+            hi.longitude AS longitude
         FROM houseinfos hi
         LEFT JOIN dongcodes dc ON hi.dong_code = dc.dong_code
         WHERE

@@ -76,9 +76,8 @@ public class AIServiceImpl implements AIService {
         String systemMsg = 
             "당신은 눈치 100단의 베테랑 공인중개사입니다. 사용자의 질문 속에 숨겨진 의도(출퇴근, 육아, 투자 등)를 파악하세요.\n" +
             "답변은 다음 형식을 엄수하세요:\n" +
-            "1. ** 🧐 의도 파악**: 사용자의 상황에 깊이 공감하는 한 마디 (예: '신혼집을 찾으시는군요! 예쁘고 가성비 좋은 곳이 딱이죠.')\n" +
-            "2. ** ✨ 추천 포인트**: 사용자가 원하는 조건이 왜 좋은지 3가지로 설명 (이모지 필수)\n" +
-            "3. 맨 마지막 줄에 반드시 `[KEYWORDS: 키워드1, 키워드2, ...]` 형식을 추가하세요. (추출한 검색어)";
+            "1. 🧐 이집내집 소견: 추천 사유를 **1~2문장으로 아주 짧게** 요약하세요. (나열식 금지, 핵심만)\n" +
+            "2. 맨 마지막 줄에 `[KEYWORDS: 구/동 이름, 키워드1, ...]` 형식을 필수로 작성하세요. (지역명 포함 필수)";
         
         String aiResponse = callGPT(query, systemMsg);
         
@@ -94,37 +93,81 @@ public class AIServiceImpl implements AIService {
                 List<String> keywords = List.of(keywordsStr.split(","))
                         .stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
                 
+                // [키워드 검색 결과] (최대 5개 제한)
                 if (!keywords.isEmpty()) {
                     searchResults = apartmentMapper.searchApartmentsByKeywords(keywords);
                 }
-                analysis = aiResponse.substring(0, aiResponse.lastIndexOf("[KEYWORDS:")).trim();
+                // AI 응답 텍스트 정리 (키워드 부분 제거)
+                if (aiResponse.contains("[KEYWORDS:")) {
+                    analysis = aiResponse.substring(0, aiResponse.lastIndexOf("[KEYWORDS:")).trim();
+                } else {
+                    analysis = aiResponse;
+                }
             } catch (Exception e) {
                 log.error("Keyword parsing failed", e);
             }
         }
 
+        // 결과 DTO 매핑 (String 좌표 -> Double 변환)
+        List<AddressResponse> resultList = searchResults.stream()
+                .limit(5)
+                .map(info -> {
+                    Double lat = null;
+                    Double lng = null;
+                    try {
+                        if (info.latitude() != null) lat = Double.parseDouble(info.latitude());
+                        if (info.longitude() != null) lng = Double.parseDouble(info.longitude());
+                    } catch (NumberFormatException e) {
+                        // ignore invalid numbers
+                    }
+                    return AddressResponse.builder()
+                            .aptSeq(info.aptSeq())
+                            .aptName(info.aptName())
+                            .dongName(info.address())
+                            .latitude(lat)
+                            .longitude(lng)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        log.debug("Semantic Search Results: size={}", resultList.size());
+        resultList.forEach(r -> log.debug(" - {} : lat={}, lng={}", r.getAptName(), r.getLatitude(), r.getLongitude()));
+
         return SemanticSearchResponse.builder()
-                .results(searchResults.stream()
-                        .map(info -> AddressResponse.builder()
-                                .aptSeq(info.aptSeq())
-                                .aptName(info.aptName())
-                                .dongName(info.address())
-                                .build())
-                        .collect(Collectors.toList()))
+                .results(resultList)
                 .analysis(analysis)
                 .build();
     }
 
     @Override
     public ParseFilterResponse parseFilter(String query) {
-        // [필터] 친절한 설명 + 정확한 JSON 데이터 추출
-        String prompt = "사용자의 말을 듣고 검색 필터를 설정하려고 합니다. \n" +
-                "1. 먼저 사용자의 요구사항을 '알겠습니다! ~조건으로 찾아볼게요' 처럼 친절하게 텍스트로 답변하세요.\n" +
-                "2. 그 다음 줄에 오직 JSON 데이터만 출력하세요. (마크다운 ```json 없이)\n" +
-                "JSON 형식: {\"priceRange\": {\"min\": 0, \"max\": 100}, \"areaRange\": {\"min\": 0, \"max\": 100}}\n" +
-                "단위: 가격(억), 면적(평). 언급 없으면 기본값(0~1000) 사용.";
+        // [필터] 속도 최적화: globalSystemPrompt를 태우지 않고 가볍게 처리
+        String systemInstruction = "You are a precise data extractor. Your goal is to convert natural language queries into a JSON object.\n" +
+                "Response Format:\n" +
+                "Line 1: A polite, single-sentence confirmation in Korean (e.g., '네, 30평대 5억 이하 매물을 찾아보겠습니다.').\n" +
+                "Line 2: The JSON object ONLY.\n" +
+                "Rules:\n" +
+                "- JSON keys: priceRange (min, max in 억), areaRange (min, max in 평)\n" +
+                "- Default: 0 to 1000 if not specified.\n" +
+                "- Do NOT explain or ask questions. JUST output the two lines.";
+
+        String userPrompt = String.format("Request: \"%s\"", query);
         
-        String fullResponse = callGPT(query, "당신은 센스 있는 검색 도우미입니다.");
+        // 직접 ChatModel 호출 (callGPT 우회)
+        String fullResponse = "";
+        try {
+            Prompt prompt = new Prompt(List.of(
+                new org.springframework.ai.chat.messages.SystemMessage(systemInstruction),
+                new UserMessage(userPrompt)
+            ));
+            var response = chatModel.call(prompt);
+            if (response != null && response.getResult() != null) {
+                fullResponse = response.getResult().getOutput().getContent();
+            }
+        } catch (Exception e) {
+            log.error("AI Fast Search Error", e);
+            fullResponse = "검색 조건을 확인하는 중 오류가 발생했습니다.\n{}";
+        }
         
         FilterConditions filters;
         String analysisText = fullResponse;
@@ -135,7 +178,7 @@ public class AIServiceImpl implements AIService {
             
             if (jsonStart != -1 && jsonEnd != -1) {
                 String jsonPart = fullResponse.substring(jsonStart, jsonEnd + 1);
-                analysisText = fullResponse.substring(0, jsonStart).trim(); // JSON 앞부분(친절한 멘트)만 사용자에게 보여줌
+                analysisText = fullResponse.substring(0, jsonStart).trim();
                 filters = objectMapper.readValue(jsonPart, FilterConditions.class);
             } else {
                 throw new RuntimeException("JSON not found");
@@ -204,15 +247,19 @@ public class AIServiceImpl implements AIService {
                 "분석 대상: %s, 아파트명 [%s].\n" +
                 "이 정보를 바탕으로, 해당 동네에 20년 산 '토박이 주민' 입장에서 아주 구체적으로 자랑하듯 설명해주세요.\n" +
                 "**[절대 규칙]**\n" +
-                "- '지도를 확인하세요', '정확한 위치는' 같은 말 금지.\n" +
-                "- 불확실하면 해당 '구'나 '동'의 유명한 랜드마크(공원, 백화점, 지하철역)를 예시로 드세요.\n" +
+                "1. **줄바꿈 필수**: 각 항목(교통, 학군, 인프라) 사이에는 반드시 빈 줄을 넣어 구분하세요.\n" +
+                "2. '지도를 확인하세요', '정확한 위치는' 같은 말 금지.\n" +
+                "3. 불확실하면 해당 '구'나 '동'의 유명한 랜드마크(공원, 백화점, 지하철역)를 예시로 드세요.\n" +
                 "- 형식:\n" +
-                "  🚇 **교통**: 가까운 지하철역 이름, 주요 도로망 언급.\n" +
-                "  🏫 **학군**: 초/중/고 통학 환경이나 학원가 분위기.\n" +
-                "  🌳 **인프라**: 마트, 공원, 병원 등 살기 좋은 이유.",
+                "  🚇 교통: \n" +
+                "     - 가까운 지하철역 이름, 주요 도로망 언급.\n\n" +
+                "  🏫 학군: \n" +
+                "     - 초/중/고 통학 환경이나 학원가 분위기.\n\n" +
+                "  🌳 인프라: \n" +
+                "     - 마트, 공원, 병원 등 살기 좋은 이유.",
                 locationName, apartmentName);
         
-        return callGPT(prompt, "당신은 " + locationName + " 지역 정보를 꿰뚫고 있는 마당발 주민입니다. 친구에게 집을 소개하듯 신나게 설명해주세요.");
+        return callGPT(prompt, "당신은 " + locationName + " 지역 정보를 꿰뚫고 있는 마당발 주민입니다. 친구에게 집을 소개하듯 신나게 설명해주되, 가독성을 위해 줄바꿈을 적극적으로 사용하세요.");
     }
 
     @Override
