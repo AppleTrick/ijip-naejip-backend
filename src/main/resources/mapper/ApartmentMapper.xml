@@ -110,7 +110,7 @@
         )
     </select>
 
-    <!-- 키워드 기반 아파트 검색 -->
+    <!-- 키워드 기반 아파트 검색 (행정구역 우선 매칭) -->
     <select id="searchApartmentsByKeywords" resultType="com.ssafy.home.dto.mapper.ApartmentBasicInfo">
         SELECT
             hi.apt_seq AS aptSeq,
@@ -130,19 +130,29 @@
             hi.avg_price AS avgPrice,
             hi.build_year AS buildYear,
             hi.latitude AS latitude,
-            hi.longitude AS longitude
+            hi.longitude AS longitude,
+            (
+                <foreach collection="keywords" item="keyword" separator="+">
+                    CASE WHEN dc.dong_name LIKE CONCAT('%', #{keyword}, '%') THEN 10
+                         WHEN dc.gugun_name LIKE CONCAT('%', #{keyword}, '%') THEN 5
+                         WHEN dc.sido_name LIKE CONCAT('%', #{keyword}, '%') THEN 2
+                         ELSE 0 END
+                </foreach>
+            ) AS relevance
         FROM houseinfos hi
         LEFT JOIN dongcodes dc ON hi.dong_code = dc.dong_code
-        WHERE
-        <foreach collection="keywords" item="keyword" separator="OR">
-            hi.apt_nm LIKE CONCAT('%', #{keyword}, '%')
-            OR dc.sido_name LIKE CONCAT('%', #{keyword}, '%')
-            OR dc.gugun_name LIKE CONCAT('%', #{keyword}, '%')
-            OR dc.dong_name LIKE CONCAT('%', #{keyword}, '%')
-            OR hi.road_nm LIKE CONCAT('%', #{keyword}, '%')
-        </foreach>
+        WHERE hi.latitude IS NOT NULL AND hi.longitude IS NOT NULL
+        AND (
+            <foreach collection="keywords" item="keyword" separator="OR">
+                dc.dong_name LIKE CONCAT('%', #{keyword}, '%')
+                OR dc.gugun_name LIKE CONCAT('%', #{keyword}, '%')
+                OR dc.sido_name LIKE CONCAT('%', #{keyword}, '%')
+            </foreach>
+        )
+        ORDER BY relevance DESC, hi.avg_price DESC
         LIMIT 10
     </select>
+
 
 </mapper>
 
