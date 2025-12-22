@@ -35,6 +35,12 @@ public record ApartmentDetailResponse(
         @Schema(description = "건축년도", example = "2006")
         Integer buildYear,
 
+        @Schema(description = "위도", example = "37.5665")
+        Double latitude,
+
+        @Schema(description = "경도", example = "126.9780")
+        Double longitude,
+
         @Schema(description = "아파트가 보유한 전체 평형 목록 (예: '22', '33')", example = "[\"22\", \"33\"]")
         List<String> pyungTypes
     ) {}

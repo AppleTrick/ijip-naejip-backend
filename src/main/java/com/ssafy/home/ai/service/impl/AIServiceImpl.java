@@ -29,6 +29,7 @@ import javax.imageio.ImageIO;
 import org.springframework.ai.model.Media;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import com.ssafy.home.ai.dto.DocumentAnalysisResponse;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
@@ -123,14 +124,8 @@ public class AIServiceImpl implements AIService {
         List<AddressResponse> resultList = searchResults.stream()
                 .limit(5)
                 .map(info -> {
-                    Double lat = null;
-                    Double lng = null;
-                    try {
-                        if (info.latitude() != null) lat = Double.parseDouble(info.latitude());
-                        if (info.longitude() != null) lng = Double.parseDouble(info.longitude());
-                    } catch (NumberFormatException e) {
-                        // ignore invalid numbers
-                    }
+                    Double lat = info.latitude();
+                    Double lng = info.longitude();
                     return AddressResponse.builder()
                             .aptSeq(info.aptSeq())
                             .aptName(info.aptName())
@@ -284,6 +279,38 @@ public class AIServiceImpl implements AIService {
                 "3. **🙋 이런 분께 추천**: '신혼부부라면 A, 아이가 있다면 B를 추천해요!'";
         
         return callGPT(prompt, "당신은 결정장애를 해결해주는 명쾌한 쇼핑 호스트입니다.");
+    }
+
+    @Override
+    public Flux<String> analyzeLocationAttractiveness(String aptName, String address) {
+        // [Fast Quick Analysis] Stream Response
+        String instruction = String.format(
+            "Analyze [%s] at [%s]. List 3 best features (e.g. Subway, Park) in Korean.\n" +
+            "Output style:\n" +
+            "✨ [Key]: 1 short sentence.\n" +
+            "✨ [Key]: 1 short sentence.\n" +
+            "✨ [Key]: 1 short sentence.", 
+            aptName, address
+        );
+        
+        try {
+            UserMessage userMessage = new UserMessage(instruction);
+            Prompt prompt = new Prompt(List.of(userMessage));
+            
+            return chatModel.stream(prompt)
+                .map(response -> {
+                    if (response.getResult() == null || response.getResult().getOutput() == null) return "";
+                    return response.getResult().getOutput().getContent();
+                })
+                .filter(content -> content != null && !content.isEmpty())
+                .onErrorResume(e -> {
+                    log.error("Streaming Error", e);
+                    return Flux.just("분석 정보를 가져오는 중 오류가 발생했습니다.");
+                });
+        } catch (Exception e) {
+            log.error("Stream Init Error", e);
+            return Flux.just("초기화 오류가 발생했습니다.");
+        }
     }
 
     @Override

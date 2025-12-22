@@ -6,8 +6,8 @@ public record ApartmentBasicInfo(
     String address,
     Integer avgPrice,
     Integer buildYear,
-    String latitude,
-    String longitude
+    Double latitude,
+    Double longitude
 ) {
 }
 

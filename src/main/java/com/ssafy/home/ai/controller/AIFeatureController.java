@@ -63,6 +63,14 @@ public class AIFeatureController {
         return ResponseEntity.ok(CommonResponse.success(summary));
     }
 
+    @Operation(summary = "AI 입지 매력 분석 (Stream)", description = "SSE 스트림으로 입지 분석 결과를 실시간으로 전송합니다")
+    @GetMapping(value = "/location-attraction", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public reactor.core.publisher.Flux<String> analyzeLocationAttractiveness(
+            @RequestParam String aptName,
+            @RequestParam String address) {
+        return aiService.analyzeLocationAttractiveness(aptName, address);
+    }
+
     @Operation(summary = "문서(등기부등본) 분석", description = "업로드된 문서를 AI Vision으로 분석하여 보증금, 시세 등을 추출합니다")
     @PostMapping(value = "/analyze-document", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<com.ssafy.home.ai.dto.DocumentAnalysisResponse>> analyzeDocument(
