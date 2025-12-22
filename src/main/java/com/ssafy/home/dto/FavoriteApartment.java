@@ -22,5 +22,7 @@ public class FavoriteApartment {
     private String address;
     private Integer pyung;
     private String dealAmount;
+    private Double latitude;
+    private Double longitude;
     private LocalDateTime createdAt;
 }

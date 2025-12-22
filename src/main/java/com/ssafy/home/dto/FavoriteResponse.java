@@ -27,6 +27,12 @@ public record FavoriteResponse(
     @Schema(description = "거래가격")
     String dealAmount,
     
+    @Schema(description = "위도")
+    Double latitude,
+    
+    @Schema(description = "경도")
+    Double longitude,
+    
     @Schema(description = "등록일시")
     String createdAt
 ) {}

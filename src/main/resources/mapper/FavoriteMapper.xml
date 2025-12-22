@@ -16,8 +16,10 @@
                 COALESCE(dc.gugun_name, ''), ' ',
                 COALESCE(dc.dong_name, '')
             ) AS address,
-            NULL AS pyung,
+            uh.pyung AS pyung,
             hi.avg_price AS dealAmount,
+            hi.latitude AS latitude,
+            hi.longitude AS longitude,
             uh.created_at AS createdAt
         FROM user_houses uh
         LEFT JOIN houseinfos hi ON uh.apt_seq = hi.apt_seq
@@ -28,8 +30,8 @@
 
     <!-- 관심 아파트 추가 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user_houses (user_id, apt_seq, ownership_type, created_at)
-        VALUES (#{userId}, #{aptSeq}, 'INTEREST', NOW())
+        INSERT INTO user_houses (user_id, apt_seq, pyung, ownership_type, created_at)
+        VALUES (#{userId}, #{aptSeq}, #{pyung}, 'INTEREST', NOW())
     </insert>
 
     <!-- 관심 아파트 삭제 (ID) -->
@@ -43,7 +45,6 @@
         DELETE FROM user_houses 
         WHERE user_id = #{userId} AND apt_seq = #{aptSeq} AND ownership_type = 'INTEREST'
     </delete>
-
 
     <!-- 중복 확인 (동일 아파트) -->
     <select id="existsByUserIdAndAptSeqAndPyung" resultType="boolean">

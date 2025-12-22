@@ -87,6 +87,8 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .address(fav.getAddress())
                 .pyung(fav.getPyung())
                 .dealAmount(fav.getDealAmount())
+                .latitude(fav.getLatitude())
+                .longitude(fav.getLongitude())
                 .createdAt(fav.getCreatedAt() != null ? fav.getCreatedAt().format(DATE_FORMATTER) : null)
                 .build();
     }
