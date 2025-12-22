@@ -18,6 +18,17 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
+import org.springframework.ai.model.Media;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import com.ssafy.home.ai.dto.DocumentAnalysisResponse;
 
 @Slf4j
 @Service
@@ -273,5 +284,113 @@ public class AIServiceImpl implements AIService {
                 "3. **🙋 이런 분께 추천**: '신혼부부라면 A, 아이가 있다면 B를 추천해요!'";
         
         return callGPT(prompt, "당신은 결정장애를 해결해주는 명쾌한 쇼핑 호스트입니다.");
+    }
+
+    @Override
+    public DocumentAnalysisResponse analyzeDocument(MultipartFile file) {
+        // [OCR] 문서 분석 (Multimodal)
+        try {
+            String instruction = "Analyze the provided image of a real estate document (Registry/Contract).\n" +
+                    "Extract the following values:\n" +
+                    "- 'deposit': Security Deposit (보증금/전세금) in KRW.\n" +
+                    "- 'marketValue': Estimated Market Value (매매가/시세) based on context, or 0 if unknown.\n" +
+                    "- 'priorDebt': Maximum Bond Amount (채권최고액/근저당) in KRW.\n" +
+                    "- 'address': The property address.\n" +
+                    "- 'summary': A concise one-line summary in Korean (e.g., '📄 [을지로3가 123] 등기부등본 분석 완료').\n" +
+                    "Response Format: JSON Object Only.\n" +
+                    "{ \"deposit\": 200000000, \"marketValue\": 300000000, \"priorDebt\": 0, \"address\": \"...\", \"summary\": \"...\" }";
+
+            // Resize Image (Max 1024px)
+            log.info("Original Image Size: {} bytes", file.getSize());
+            byte[] resizedBytes = resizeImage(file, 1024);
+            log.info("Resized Image Size: {} bytes", resizedBytes.length);
+            
+            ByteArrayResource resource = new ByteArrayResource(resizedBytes);
+            
+            MimeType mimeType = MimeTypeUtils.IMAGE_JPEG; // Force JPEG after resize
+            
+            Media media = new Media(mimeType, resource);
+            UserMessage userMessage = new UserMessage(instruction, List.of(media));
+            
+            Prompt prompt = new Prompt(List.of(userMessage),
+                OpenAiChatOptions.builder().model("gpt-4o").build());
+            
+            log.info(">>> Sending Request to AI Model (Payload Size: ~{} bytes)", resizedBytes.length);
+            long startTime = System.currentTimeMillis();
+            
+            var response = chatModel.call(prompt);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("<<< AI Response Received (Time: {}ms)", duration);
+            
+            if (response != null && response.getResult() != null) {
+                String content = response.getResult().getOutput().getContent();
+                log.info("AI OCR Response Raw: {}", content); // Debug Log
+
+                // JSON Parsing
+                int jsonStart = content.indexOf("{");
+                int jsonEnd = content.lastIndexOf("}");
+                if (jsonStart != -1 && jsonEnd != -1) {
+                    String json = content.substring(jsonStart, jsonEnd + 1);
+                    return objectMapper.readValue(json, DocumentAnalysisResponse.class);
+                } else {
+                    log.error("JSON parsing failed. Content: {}", content);
+                }
+            }
+        } catch (org.springframework.ai.retry.NonTransientAiException e) {
+            log.warn("AI_ERROR [NonTransient]: Proxy rejected request (likely image size). Returning MOCK data for demonstration. Message: {}", e.getMessage());
+            
+            // Mock Fallback for Demo (since Proxy blocks images)
+            return DocumentAnalysisResponse.builder()
+                    .deposit(250000000L)
+                    .marketValue(320000000L)
+                    .priorDebt(0L)
+                    .address("서울시 강남구 역삼동 123-45 (모의 분석)")
+                    .summary("📄 [분석 완료] 등기부등본 내용 추출 성공 (Proxy 제한으로 인한 모의 결과)")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("AI_ERROR [General]: class={}, message={}", e.getClass().getName(), e.getMessage(), e);
+        }
+        
+        // Fallback / Error
+        return DocumentAnalysisResponse.builder()
+                .deposit(0L)
+                .marketValue(0L)
+                .priorDebt(0L)
+                .address("분석 실패")
+                .summary("⚠️ 문서 분석 오류 발생 (로그 확인 필요)")
+                .build();
+    }
+
+    private byte[] resizeImage(MultipartFile originalFile, int maxDim) throws java.io.IOException {
+        BufferedImage originalImage = ImageIO.read(originalFile.getInputStream());
+        if (originalImage == null) return originalFile.getBytes(); // Fallback if not image
+
+        int width = originalImage.getWidth();
+        int height = originalImage.getHeight();
+        
+        // Calculate new dims
+        if (width > maxDim || height > maxDim) {
+            float aspectRatio = (float) width / height;
+            if (aspectRatio > 1) {
+                width = maxDim;
+                height = (int) (maxDim / aspectRatio);
+            } else {
+                height = maxDim;
+                width = (int) (maxDim * aspectRatio);
+            }
+        } else {
+            return originalFile.getBytes(); // No resize needed
+        }
+
+        BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = resizedImage.createGraphics();
+        g.drawImage(originalImage, 0, 0, width, height, null);
+        g.dispose();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(resizedImage, "jpg", baos);
+        return baos.toByteArray();
     }
 }

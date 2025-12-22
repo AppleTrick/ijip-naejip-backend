@@ -11,4 +11,5 @@ public interface AIService {
     FraudAnalysisResponse performFraudAnalysis(FraudAnalysisRequest request);
     String getRegionalAnalysis(String areaCode, String apartmentName);
     String getComparisonSummary(String comparisonData);
+    com.ssafy.home.ai.dto.DocumentAnalysisResponse analyzeDocument(org.springframework.web.multipart.MultipartFile file);
 }

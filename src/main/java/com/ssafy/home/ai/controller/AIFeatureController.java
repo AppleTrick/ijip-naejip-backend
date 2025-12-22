@@ -62,4 +62,12 @@ public class AIFeatureController {
         String summary = aiService.getComparisonSummary(comparisonData);
         return ResponseEntity.ok(CommonResponse.success(summary));
     }
+
+    @Operation(summary = "문서(등기부등본) 분석", description = "업로드된 문서를 AI Vision으로 분석하여 보증금, 시세 등을 추출합니다")
+    @PostMapping(value = "/analyze-document", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CommonResponse<com.ssafy.home.ai.dto.DocumentAnalysisResponse>> analyzeDocument(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        com.ssafy.home.ai.dto.DocumentAnalysisResponse response = aiService.analyzeDocument(file);
+        return ResponseEntity.ok(CommonResponse.success(response));
+    }
 }
