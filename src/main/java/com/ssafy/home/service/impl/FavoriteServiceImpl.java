@@ -69,6 +69,12 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     @Override
+    public void removeFavoriteByAptSeq(Long userId, String aptSeq) {
+        log.info("관심 아파트 삭제 (aptSeq) - userId: {}, aptSeq: {}", userId, aptSeq);
+        favoriteMapper.deleteByAptSeq(userId, aptSeq);
+    }
+
+    @Override
     public boolean isFavorite(Long userId, String aptSeq, Integer pyung) {
         return favoriteMapper.existsByUserIdAndAptSeqAndPyung(userId, aptSeq, pyung);
     }

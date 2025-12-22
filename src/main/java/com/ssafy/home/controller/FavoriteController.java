@@ -55,7 +55,7 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "관심 아파트 삭제")
+    @Operation(summary = "관심 아파트 삭제 (ID)")
     public ResponseEntity<CommonResponse<Void>> removeFavorite(
             HttpServletRequest request,
             @PathVariable Long id
@@ -64,6 +64,18 @@ public class FavoriteController {
         favoriteService.removeFavorite(userId, id);
         return ResponseEntity.ok(CommonResponse.success(null));
     }
+
+    @DeleteMapping("/apt/{aptSeq}")
+    @Operation(summary = "관심 아파트 삭제 (aptSeq)")
+    public ResponseEntity<CommonResponse<Void>> removeFavoriteByAptSeq(
+            HttpServletRequest request,
+            @PathVariable String aptSeq
+    ) {
+        Long userId = getUserIdFromToken(request);
+        favoriteService.removeFavoriteByAptSeq(userId, aptSeq);
+        return ResponseEntity.ok(CommonResponse.success(null));
+    }
+
 
     @GetMapping("/check")
     @Operation(summary = "관심 등록 여부 확인")

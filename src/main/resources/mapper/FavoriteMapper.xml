@@ -32,11 +32,18 @@
         VALUES (#{userId}, #{aptSeq}, 'INTEREST', NOW())
     </insert>
 
-    <!-- 관심 아파트 삭제 -->
+    <!-- 관심 아파트 삭제 (ID) -->
     <delete id="deleteById">
         DELETE FROM user_houses 
         WHERE id = #{id} AND user_id = #{userId} AND ownership_type = 'INTEREST'
     </delete>
+
+    <!-- 관심 아파트 삭제 (aptSeq) -->
+    <delete id="deleteByAptSeq">
+        DELETE FROM user_houses 
+        WHERE user_id = #{userId} AND apt_seq = #{aptSeq} AND ownership_type = 'INTEREST'
+    </delete>
+
 
     <!-- 중복 확인 (동일 아파트) -->
     <select id="existsByUserIdAndAptSeqAndPyung" resultType="boolean">

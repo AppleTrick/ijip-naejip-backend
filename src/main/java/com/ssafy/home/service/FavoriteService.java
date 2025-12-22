@@ -21,10 +21,15 @@ public interface FavoriteService {
     FavoriteResponse addFavorite(Long userId, FavoriteAddRequest request);
     
     /**
-     * 관심 아파트 삭제
+     * 관심 아파트 삭제 (ID)
      */
     void removeFavorite(Long userId, Long favoriteId);
-    
+
+    /**
+     * 관심 아파트 삭제 (aptSeq)
+     */
+    void removeFavoriteByAptSeq(Long userId, String aptSeq);
+
     /**
      * 중복 확인
      */

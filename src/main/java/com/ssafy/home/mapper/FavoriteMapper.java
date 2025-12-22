@@ -23,9 +23,15 @@ public interface FavoriteMapper {
     void insert(FavoriteApartment favorite);
     
     /**
-     * 관심 아파트 삭제
+     * 관심 아파트 삭제 (ID)
      */
     void deleteById(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * 관심 아파트 삭제 (aptSeq)
+     */
+    void deleteByAptSeq(@Param("userId") Long userId, @Param("aptSeq") String aptSeq);
+
     
     /**
      * 중복 확인 (동일 아파트 + 평수)
