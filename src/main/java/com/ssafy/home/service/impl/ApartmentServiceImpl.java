@@ -67,12 +67,15 @@ public class ApartmentServiceImpl implements ApartmentService {
         }
 
         // 5. 아파트 기본 정보 DTO 생성
+        // 5. 아파트 기본 정보 DTO 생성
         ApartmentDetailResponse.ApartmentInfoDto infoDto = new ApartmentDetailResponse.ApartmentInfoDto(
             aptInfo.aptSeq(),
             aptInfo.aptName(),
             aptInfo.address(),
             avgPrice,
             aptInfo.buildYear(),
+            aptInfo.latitude(),
+            aptInfo.longitude(),
             pyungTypeStrings
         );
 
