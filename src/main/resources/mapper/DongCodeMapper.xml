@@ -5,15 +5,35 @@
 
 <mapper namespace="com.ssafy.home.mapper.DongCodeMapper">
 
+    <!-- Record 타입을 위한 생성자 기반 resultMap -->
     <resultMap id="dongCodeResultMap" type="com.ssafy.home.dto.DongCodeResponse">
-        <id property="dongCode" column="dong_code"/>
-        <result property="sidoName" column="sido_name"/>
-        <result property="gugunName" column="gugun_name"/>
-        <result property="dongName" column="dong_name"/>
-        <result property="latitude" column="latitude"/>
-        <result property="longitude" column="longitude"/>
-        <result property="avgPrice" column="avg_price"/>
+        <constructor>
+            <arg column="dong_code" javaType="String"/>
+            <arg column="sido_name" javaType="String"/>
+            <arg column="gugun_name" javaType="String"/>
+            <arg column="dong_name" javaType="String"/>
+            <arg column="latitude" javaType="Double"/>
+            <arg column="longitude" javaType="Double"/>
+            <arg column="avg_price" javaType="Integer"/>
+        </constructor>
     </resultMap>
+
+    <!-- 지역명 토큰으로 검색 (시/도/구/군/동 모든 레벨) -->
+    <select id="searchByRegionToken" resultMap="dongCodeResultMap">
+        SELECT dong_code, sido_name, gugun_name, dong_name, latitude, longitude, avg_price
+        FROM dongcodes
+        WHERE sido_name LIKE CONCAT('%', #{token}, '%')
+           OR gugun_name LIKE CONCAT('%', #{token}, '%')
+           OR dong_name LIKE CONCAT('%', #{token}, '%')
+        ORDER BY
+            CASE
+                WHEN dong_name IS NOT NULL THEN 1
+                WHEN gugun_name IS NOT NULL THEN 2
+                ELSE 3
+            END,
+            sido_name, gugun_name, dong_name
+        LIMIT 10
+    </select>
 
 </mapper>
 

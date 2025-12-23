@@ -1,8 +1,9 @@
-package com.ssafy.home.controller;
+package com.ssafy.home.ai.controller;
 
 import com.ssafy.home.ai.dto.AIChatRequest;
 import com.ssafy.home.ai.dto.SemanticSearchResponse;
-import com.ssafy.home.service.AIChatbotService;
+import com.ssafy.home.ai.service.AIChatbotService;
+import com.ssafy.home.dto.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,9 @@ public class AIChatbotController {
 
     @Operation(summary = "채팅 질의", description = "자연어 질문을 받아 SQL을 생성/실행하여 분석 결과를 반환합니다.")
     @PostMapping("/chat")
-    public ResponseEntity<SemanticSearchResponse> chat(@RequestBody AIChatRequest request) {
+    public ResponseEntity<CommonResponse<SemanticSearchResponse>> chat(@RequestBody AIChatRequest request) {
         log.info("AI Chat Request: {}", request.getMessage());
         SemanticSearchResponse response = aiChatbotService.generateResponse(request.getMessage());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(CommonResponse.success(response));
     }
 }

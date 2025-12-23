@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot 테스트 - 부동산 분석</title>
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Highlight.js for code syntax highlighting (optional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Markdown styles */
+        .message-content h1 {
+            font-size: 24px;
+            margin: 20px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .message-content h2 {
+            font-size: 20px;
+            margin: 18px 0 12px 0;
+            color: #764ba2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-content h3 {
+            font-size: 18px;
+            margin: 15px 0 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-content p {
+            line-height: 1.8;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .message-content ul, .message-content ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .message-content li {
+            margin: 6px 0;
+            line-height: 1.6;
+        }
+
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .message-content table th,
+        .message-content table td {
+            border: 1px solid #ddd;
+            padding: 12px 10px;
+            text-align: left;
+        }
+
+        .message-content table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .message-content table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .message-content table tr:hover {
+            background: #e9ecef;
+            transition: background 0.2s;
+        }
+
+        .message-content table td {
+            color: #333;
+        }
+
+        .message-content strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 20px 0;
+        }
+
+        .message-content code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #d63384;
+        }
+
+        .message-content pre {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+            color: #f8f8f2;
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #666;
+            font-style: italic;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+
+        .message-content em {
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Apartment results section */
+        .apartment-results {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .apartment-results h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .apartment-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .apartment-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .apartment-card .apt-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .apartment-card .apt-info {
+            font-size: 13px;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .apartment-card .apt-info span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .apartment-card .apt-info .badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Loading spinner */
+        .loading-container {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .loading-container.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-left: 15px;
+            color: #667;
+            font-size: 14px;
+        }
+
+        /* Input area */
+        .input-container {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .quick-questions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #667eea;
+        }
+
+        .input-wrapper button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .input-wrapper button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-wrapper button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Custom Alert Modal */
+        .custom-alert {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s;
+        }
+
+        .custom-alert.active {
+            display: flex;
+        }
+
+        .alert-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .alert-header h2 {
+            color: #667eea;
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .alert-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .alert-body {
+            line-height: 1.8;
+        }
+
+        .alert-info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .alert-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .alert-info-label {
+            font-weight: 600;
+            color: #667eea;
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .alert-info-value {
+            color: #333;
+            flex: 1;
+        }
+
+        .alert-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .alert-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #764ba2;
+            margin-bottom: 12px;
+        }
+
+        .deal-item {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 AI 부동산 분석 챗봇</h1>
+            <p>Tool Calling 방식으로 데이터를 조회하고 마크다운 리포트를 생성합니다</p>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message assistant">
+                <div class="message-content">
+                    <h2>👋 안녕하세요!</h2>
+                    <p>부동산 데이터 분석을 도와드리는 AI 챗봇입니다.</p>
+                    <p>아래 예시 질문을 클릭하거나 직접 질문을 입력해주세요:</p>
+                    <ul>
+                        <li>강남구와 서초구의 평균 거래가를 비교해주세요</li>
+                        <li>성수동에서 10억 이하 아파트를 추천해주세요</li>
+                        <li>최근 강남 지역 아파트 거래 추이를 분석해주세요</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading-container" id="loadingContainer">
+            <div class="spinner"></div>
+            <div class="loading-text">AI가 데이터를 분석하고 있습니다...</div>
+        </div>
+
+        <div class="input-container">
+            <div class="quick-questions">
+                <button class="quick-btn" onclick="sendQuickQuestion('강남구와 서초구의 평균 거래가를 비교해주세요')">
+                    🔍 지역 비교
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuestion('성수동에서 10억 이하 아파트를 추천해주세요')">
+                    🏢 아파트 추천
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuestion('최근 강남 지역 아파트 거래 추이를 분석해주세요')">
+                    📈 거래 추이
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuestion('서울에서 가장 거래량이 많은 지역 Top 5는?')">
+                    🏆 Top 5
+                </button>
+            </div>
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    id="userInput"
+                    placeholder="질문을 입력하세요... (예: 강남구의 최근 거래 현황을 알려주세요)"
+                    onkeypress="handleKeyPress(event)"
+                />
+                <button id="sendBtn" onclick="sendMessage()">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div class="custom-alert" id="customAlert" onclick="closeAlert(event)">
+        <div class="alert-content" onclick="event.stopPropagation()">
+            <div class="alert-header">
+                <h2 id="alertTitle">아파트 상세 정보</h2>
+                <button class="alert-close" onclick="closeAlert()">&times;</button>
+            </div>
+            <div class="alert-body" id="alertBody">
+                <!-- Content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = '/api/v1';
+
+        // Marked.js configuration
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            mangle: false
+        });
+
+        // Send message function
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Disable input
+            input.value = '';
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            // Add user message to chat
+            addMessage('user', message);
+
+            // Show loading
+            showLoading(true);
+
+            try {
+                // Call AI API
+                const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 오류: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                showLoading(false);
+
+                // Add assistant message with markdown
+                if (data.data) {
+                    addMessage('assistant', data.data.analysis, data.data.results);
+                } else {
+                    addMessage('assistant', '응답을 받지 못했습니다.');
+                }
+
+            } catch (error) {
+                showLoading(false);
+                addMessage('assistant', `❌ 오류가 발생했습니다: ${error.message}`);
+                console.error('Error:', error);
+            } finally {
+                // Re-enable input
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content, results = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            if (role === 'assistant') {
+                // Remove markdown code block wrapper if present
+                let cleanContent = content;
+                if (cleanContent.startsWith('```markdown')) {
+                    cleanContent = cleanContent.replace(/^```markdown\n/, '').replace(/\n```$/, '');
+                } else if (cleanContent.startsWith('```')) {
+                    cleanContent = cleanContent.replace(/^```\n/, '').replace(/\n```$/, '');
+                }
+
+                // Render markdown
+                contentDiv.innerHTML = marked.parse(cleanContent);
+
+                // Add apartment results if available
+                if (results && results.length > 0) {
+                    const resultsSection = createApartmentResults(results);
+                    contentDiv.appendChild(resultsSection);
+                }
+
+                // Apply syntax highlighting if any code blocks exist
+                contentDiv.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } else {
+                contentDiv.textContent = content;
+            }
+
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+
+            // Scroll to bottom with smooth animation
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Create apartment results section
+        function createApartmentResults(results) {
+            const section = document.createElement('div');
+            section.className = 'apartment-results';
+
+            const title = document.createElement('h3');
+            title.innerHTML = '🏢 참고할 만한 아파트 목록 <span style="font-size: 14px; color: #999; font-weight: normal;">(' + results.length + '개)</span>';
+            section.appendChild(title);
+
+            results.forEach(apt => {
+                const card = document.createElement('div');
+                card.className = 'apartment-card';
+                card.onclick = () => showApartmentDetail(apt.aptSeq, apt.aptName);
+
+                const name = document.createElement('div');
+                name.className = 'apt-name';
+                name.textContent = apt.aptName || '아파트 이름';
+
+                const info = document.createElement('div');
+                info.className = 'apt-info';
+
+                // 지역 정보 (시도 + 구군 + 동)
+                const location = document.createElement('span');
+                let locationText = '';
+                if (apt.sidoName) locationText += apt.sidoName;
+                if (apt.gugunName) locationText += (locationText ? ' ' : '') + apt.gugunName;
+                if (apt.dongName) locationText += (locationText ? ' ' : '') + apt.dongName;
+                if (apt.aptDong) locationText += (locationText ? ' ' : '') + apt.aptDong + '동';
+                location.innerHTML = `📍 ${locationText || '위치 정보 없음'}`;
+                info.appendChild(location);
+
+                // 가격 정보
+                if (apt.avgPrice) {
+                    const price = document.createElement('span');
+                    const priceInEok = (apt.avgPrice / 10000).toFixed(1);
+                    price.innerHTML = `💰 평균 <strong>${priceInEok}억원</strong>`;
+                    info.appendChild(price);
+                }
+
+                // 평형 정보
+                if (apt.primaryPyung) {
+                    const pyung = document.createElement('span');
+                    pyung.innerHTML = `<span class="badge">${apt.primaryPyung}평</span>`;
+                    info.appendChild(pyung);
+                }
+
+                card.appendChild(name);
+                card.appendChild(info);
+                section.appendChild(card);
+            });
+
+            return section;
+        }
+
+        // Show apartment detail
+        async function showApartmentDetail(aptSeq, aptName) {
+            try {
+                // Show loading in modal
+                document.getElementById('alertTitle').textContent = '로딩 중...';
+                document.getElementById('alertBody').innerHTML = '<p style="text-align: center; padding: 40px;">아파트 정보를 가져오는 중...</p>';
+                document.getElementById('customAlert').classList.add('active');
+
+                const response = await fetch(`${API_BASE_URL}/apartments/${aptSeq}?pyung=all`);
+
+                if (!response.ok) {
+                    throw new Error(`아파트 정보를 가져올 수 없습니다 (${response.status})`);
+                }
+
+                const result = await response.json();
+                const data = result.data;
+
+                // Update modal content
+                document.getElementById('alertTitle').textContent = data.aptName || aptName;
+                document.getElementById('alertBody').innerHTML = formatApartmentDetail(data);
+
+            } catch (error) {
+                document.getElementById('alertTitle').textContent = '오류';
+                document.getElementById('alertBody').innerHTML = `<p style="color: red;">❌ ${error.message}</p>`;
+            }
+        }
+
+        // Format apartment detail for modal
+        function formatApartmentDetail(data) {
+            let html = '<div>';
+
+            // Basic info
+            html += '<div class="alert-info-row">';
+            html += '<div class="alert-info-label">🏢 아파트명</div>';
+            html += `<div class="alert-info-value"><strong>${data.aptName}</strong></div>`;
+            html += '</div>';
+
+            html += '<div class="alert-info-row">';
+            html += '<div class="alert-info-label">📍 위치</div>';
+            html += `<div class="alert-info-value">${data.dongName || '-'}</div>`;
+            html += '</div>';
+
+            html += '<div class="alert-info-row">';
+            html += '<div class="alert-info-label">📅 준공년도</div>';
+            html += `<div class="alert-info-value">${data.buildYear}년</div>`;
+            html += '</div>';
+
+            html += '<div class="alert-info-row">';
+            html += '<div class="alert-info-label">🏠 주소</div>';
+            html += `<div class="alert-info-value">${data.roadName || data.jibun || '-'}</div>`;
+            html += '</div>';
+
+            // Statistics
+            if (data.pyungStats && data.pyungStats.length > 0) {
+                html += '<div class="alert-section">';
+                html += '<div class="alert-section-title">📊 평형별 통계</div>';
+
+                data.pyungStats.forEach(stat => {
+                    const avgPrice = (stat.avgPrice / 10000).toFixed(1);
+                    const maxPrice = (stat.maxPrice / 10000).toFixed(1);
+                    const minPrice = (stat.minPrice / 10000).toFixed(1);
+
+                    html += '<div class="deal-item">';
+                    html += `<strong>${stat.pyung}평</strong> - `;
+                    html += `평균: <strong>${avgPrice}억</strong> | `;
+                    html += `최고: ${maxPrice}억 | `;
+                    html += `최저: ${minPrice}억 | `;
+                    html += `거래: ${stat.dealCount}건`;
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            // Recent deals
+            if (data.recentDeals && data.recentDeals.length > 0) {
+                html += '<div class="alert-section">';
+                html += '<div class="alert-section-title">💳 최근 거래 내역 (최대 5건)</div>';
+
+                data.recentDeals.slice(0, 5).forEach(deal => {
+                    const price = (deal.dealAmount / 10000).toFixed(1);
+                    const date = deal.dealDate.toString();
+                    const formattedDate = `${date.substr(0, 4)}.${date.substr(4, 2)}.${date.substr(6, 2)}`;
+
+                    html += '<div class="deal-item">';
+                    html += `📅 ${formattedDate} | `;
+                    html += `${deal.pyung}평 ${deal.floor}층 | `;
+                    html += `<strong>${price}억원</strong>`;
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            }
+
+            // Additional info
+            html += '<div class="alert-section">';
+            html += '<div class="alert-section-title">ℹ️ 추가 정보</div>';
+
+            html += '<div class="alert-info-row">';
+            html += '<div class="alert-info-label">🔢 총 거래 건수</div>';
+            html += `<div class="alert-info-value">${data.totalDealCount || 0}건</div>`;
+            html += '</div>';
+
+            if (data.latitude && data.longitude) {
+                html += '<div class="alert-info-row">';
+                html += '<div class="alert-info-label">🗺️ 좌표</div>';
+                html += `<div class="alert-info-value">${data.latitude}, ${data.longitude}</div>`;
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            html += '</div>';
+            return html;
+        }
+
+        // Close alert modal
+        function closeAlert(event) {
+            if (event && event.target !== document.getElementById('customAlert')) {
+                return;
+            }
+            document.getElementById('customAlert').classList.remove('active');
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const chatContainer = document.getElementById('chatContainer');
+
+            if (show) {
+                loadingContainer.classList.add('active');
+                chatContainer.style.display = 'none';
+            } else {
+                loadingContainer.classList.remove('active');
+                chatContainer.style.display = 'block';
+            }
+        }
+
+        // Quick question
+        function sendQuickQuestion(question) {
+            document.getElementById('userInput').value = question;
+            sendMessage();
+        }
+
+        // Handle enter key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('userInput').focus();
+        });
+    </script>
+</body>
+</html>
+
