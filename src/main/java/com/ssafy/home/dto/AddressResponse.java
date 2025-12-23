@@ -27,5 +27,5 @@ public class AddressResponse {
     private Double longitude;
     private Integer avgPrice;
     private Integer primaryPyung;
+    private Integer pricePerPyung; // 평당 평균 가격(만원 단위)
 }
-
