@@ -225,9 +225,11 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `user_id` BIGINT NOT NULL,
     `apt_seq` VARCHAR(20) NOT NULL,
+    `pyung` INT NULL COMMENT '선택한 평수',
     `ownership_type` ENUM('OWNED', 'INTEREST') NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_user_apt` (`user_id`, `apt_seq`, `ownership_type`),
     INDEX `fk_user_houses_user_idx` (`user_id` ASC) VISIBLE,
     INDEX `fk_user_houses_apt_idx` (`apt_seq` ASC) VISIBLE,
     CONSTRAINT `fk_user_houses_user`

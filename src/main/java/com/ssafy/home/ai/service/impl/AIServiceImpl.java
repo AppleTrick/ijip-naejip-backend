@@ -8,8 +8,8 @@ import com.ssafy.home.dto.DongCodeResponse;
 import com.ssafy.home.dto.AddressResponse;
 import com.ssafy.home.dto.mapper.ApartmentBasicInfo;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.util.MimeType;
@@ -33,13 +33,42 @@ import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AIServiceImpl implements AIService {
 
     private final ChatModel chatModel;
+    private final ChatClient chatClient;
     private final ApartmentMapper apartmentMapper;
     private final DongCodeMapper dongCodeMapper;
+
+    public AIServiceImpl(ChatModel chatModel, ChatClient.Builder chatClientBuilder, 
+                        ApartmentMapper apartmentMapper, DongCodeMapper dongCodeMapper) {
+        this.chatModel = chatModel;
+        this.chatClient = chatClientBuilder.build();
+        this.apartmentMapper = apartmentMapper;
+        this.dongCodeMapper = dongCodeMapper;
+    }
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+
+    
+    /**
+     * 대괄호 짝 찾기
+     */
+    private int findMatchingBracket(String s, int openIdx) {
+        if (openIdx < 0 || openIdx >= s.length() || s.charAt(openIdx) != '[') return -1;
+        int depth = 0;
+        for (int i = openIdx; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '[') depth++;
+            else if (c == ']') {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+
 
     /**
      * 공통 AI 호출 메서드
@@ -66,7 +95,7 @@ public class AIServiceImpl implements AIService {
 
         try {
             // System Role을 명확히 분리하여 전달 (UserMessage 내부에 포함하는 방식 유지하되 명확히 구분)
-            String combinedPrompt = String.format("---[지시사항]---\n%s\n\n---[사용자 입력]---\n%s", globalSystemPrompt, trimmedPrompt);
+            String combinedPrompt = String.format("---[지시사항]---\n%s \n---[사용자 입력]---\n%s", globalSystemPrompt, trimmedPrompt);
             UserMessage userMessage = new UserMessage(combinedPrompt);
             
             Prompt prompt = new Prompt(List.of(userMessage));
@@ -84,70 +113,145 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public SemanticSearchResponse performSemanticSearch(String query) {
-        // [검색] 사용자의 '개떡 같은' 질문도 '찰떡같이' 알아듣는 베테랑 중개사 모드
-        String systemMsg = 
-            "당신은 눈치 100단의 베테랑 공인중개사입니다. 사용자의 질문 속에 숨겨진 의도(출퇴근, 육아, 투자 등)를 파악하세요.\n" +
-            "답변은 다음 형식을 엄수하세요:\n" +
-            "1. 🧐 이집내집 소견: 추천 사유를 **1~2문장으로 아주 짧게** 요약하세요. (나열식 금지, 핵심만)\n" +
-            "2. 추천 지역을 **구체적인 행정구역명(OO구, OO동)**으로 2~3개 제시하세요.\n" +
-            "3. 맨 마지막 줄에 `[KEYWORDS: 역삼동, 강남구, ...]` 형식으로 **행정구역명만** 쉼표로 구분하여 작성하세요.\n" +
-            "   - 반드시 실제 서울/경기 지역의 구(區) 또는 동(洞) 이름만 포함하세요.\n" +
-            "   - '역세권', '분리형', '원룸' 같은 일반 키워드는 포함하지 마세요.\n" +
-            "   - 예: [KEYWORDS: 역삼동, 강남구, 건대동, 광진구]";
+        log.info("Performing Semantic Search with Tool Calling for query: {}", query);
 
-        
-        String aiResponse = callGPT(query, systemMsg);
-        
-        List<ApartmentBasicInfo> searchResults = new ArrayList<>();
-        String analysis = aiResponse;
-        
-        // 키워드 파싱 로직
-        if (aiResponse.contains("[KEYWORDS:")) {
+        String systemMsg = 
+            "당신은 대한민국 부동산 전문가 '이집내집 AI'입니다.\n" +
+            "\n" +
+            "**[절대 규칙 - 위반 시 오류]**\n" +
+            "1. **도구 결과만 사용**: 반드시 검색 도구가 반환한 데이터만 사용하세요. 아파트 이름, 주소, 가격, 좌표 모두 도구 결과에서 그대로 복사하세요. 가상의 데이터를 절대 만들지 마세요.\n" +
+            "2. **한글 직접 출력**: JSON에서 유니코드를 사용하지마세요. 예: '래미안'이면 '래미안'이라고 쓰세요 \n" +
+            "3. **즉시 검색 수행**: 사용자에게 허락을 구하지 말고 바로 도구를 호출하세요.\n" +
+            "\n" +
+            "**[도구 선택]**\n" +
+            "- `localSearchFunction`: 지역 + 가격/평수 필터 (예: keywords:['마포구'], maxPrice:130000)\n" +
+            "- `subwayNearbyFunction`: 역 인근 검색 (예: stationName:'홍대역')\n" +
+            "- `kakaoSearchFunction`: 특수 키워드 검색\n" +
+            "\n" +
+            "**[출력 형식]**\n" +
+            "- 🧐 소견: 검색 결과 요약\n" +
+            "- 단지별 분석: 도구에서 가져온 실제 단지 정보\n" +
+            "- [JSON_RESULTS: [{\"name\": \"도구에서받은실제이름\", \"address\": \"도구에서받은실제주소\", \"lat\": 숫자, \"lng\": 숫자}, ...]]";
+
+        try {
+            String aiResponse = chatClient.prompt()
+                    .system(systemMsg)
+                    .user(query)
+                    .functions("localSearchFunction", "kakaoSearchFunction", "subwayNearbyFunction", "priceTrendFunction")
+                    .call()
+                    .content();
+
+            if (aiResponse == null) {
+                return SemanticSearchResponse.builder()
+                        .analysis("AI 파트너가 응답하지 않았어요. 잠시 후 다시 시도해 주세요.")
+                        .results(new ArrayList<>())
+                        .build();
+            }
+
+            log.info("AI Response with tools (raw): {}", aiResponse);
+            
+            List<AddressResponse> resultList = new ArrayList<>();
+            String analysis = aiResponse;
+
+            // JSON_RESULTS 파싱 (다양한 형식 지원)
             try {
-                int start = aiResponse.lastIndexOf("[KEYWORDS:") + 10;
-                int end = aiResponse.lastIndexOf("]");
-                String keywordsStr = aiResponse.substring(start, end);
-                List<String> keywords = List.of(keywordsStr.split(","))
-                        .stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+                // 유니코드 이스케이프 디코딩
+                String decodedResponse = aiResponse;
                 
-                // [키워드 검색 결과] (최대 5개 제한)
-                if (!keywords.isEmpty()) {
-                    searchResults = apartmentMapper.searchApartmentsByKeywords(keywords);
+                // JSON 배열 찾기: JSON_RESULTS 이후 또는 마지막 [ ] 블록
+                String jsonPart = null;
+                
+                // 패턴 1: [JSON_RESULTS: [...]]
+                int jsonResultsIdx = decodedResponse.indexOf("JSON_RESULTS");
+                if (jsonResultsIdx != -1) {
+                    int arrayStart = decodedResponse.indexOf("[", jsonResultsIdx);
+                    if (arrayStart != -1) {
+                        int arrayEnd = findMatchingBracket(decodedResponse, arrayStart);
+                        if (arrayEnd != -1) {
+                            jsonPart = decodedResponse.substring(arrayStart, arrayEnd + 1);
+                        }
+                    }
                 }
-                // AI 응답 텍스트 정리 (키워드 부분 제거)
-                if (aiResponse.contains("[KEYWORDS:")) {
-                    analysis = aiResponse.substring(0, aiResponse.lastIndexOf("[KEYWORDS:")).trim();
+                
+                // 패턴 2: 마지막 JSON 배열 찾기 ([ 로 시작하고 ] 로 끝나는)
+                if (jsonPart == null) {
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[\\s*\\{[^\\[]*\\}\\s*\\]", java.util.regex.Pattern.DOTALL);
+                    java.util.regex.Matcher matcher = pattern.matcher(decodedResponse);
+                    String lastMatch = null;
+                    while (matcher.find()) {
+                        lastMatch = matcher.group();
+                    }
+                    jsonPart = lastMatch;
+                }
+                
+                if (jsonPart != null) {
+                    log.info("Found JSON part: {}", jsonPart.length() > 200 ? jsonPart.substring(0, 200) + "..." : jsonPart);
+                    
+                    com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(jsonPart);
+                    if (rootNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode node : rootNode) {
+                            if (!node.has("name")) continue;
+                            String name = node.get("name").asText();
+                            String address = node.has("address") ? node.get("address").asText() : "";
+                            double lat = node.has("lat") ? node.get("lat").asDouble() : 0.0;
+                            double lng = node.has("lng") ? node.get("lng").asDouble() : 0.0;
+
+                            // DB 매칭 시도
+                            List<ApartmentBasicInfo> dbResults = apartmentMapper.searchByAptNames(List.of(name));
+                            
+                            if (!dbResults.isEmpty()) {
+                                ApartmentBasicInfo dbInfo = dbResults.get(0);
+                                log.info("Matched with DB: {}", name);
+                                resultList.add(AddressResponse.builder()
+                                        .aptSeq(dbInfo.aptSeq())
+                                        .aptName(dbInfo.aptName())
+                                        .dongName(dbInfo.address())
+                                        .latitude(dbInfo.latitude())
+                                        .longitude(dbInfo.longitude())
+                                        .build());
+                            } else {
+                                // DB에 없더라도 카카오 정보를 바탕으로 결과 추가 (Fallback)
+                                log.info("No DB match, using fallback: {}", name);
+                                resultList.add(AddressResponse.builder()
+                                        .aptSeq("KAKAO-" + name.hashCode())
+                                        .aptName(name)
+                                        .dongName(address)
+                                        .latitude(lat)
+                                        .longitude(lng)
+                                        .build());
+                            }
+                        }
+                    }
+
+                    log.info("Total results: {} (DB: {}, Fallback: {})", 
+                        resultList.size(), 
+                        resultList.stream().filter(r -> !r.getAptSeq().startsWith("KAKAO-")).count(),
+                        resultList.stream().filter(r -> r.getAptSeq().startsWith("KAKAO-")).count());
+
+                    // 분석 텍스트에서 JSON 부분 제거
+                    int jsonIdx = decodedResponse.indexOf("JSON_RESULTS");
+                    if (jsonIdx != -1) {
+                        analysis = decodedResponse.substring(0, jsonIdx).trim();
+                    }
                 } else {
-                    analysis = aiResponse;
+                    log.warn("No JSON_RESULTS found in response");
                 }
             } catch (Exception e) {
-                log.error("Keyword parsing failed", e);
+                log.error("JSON_RESULTS parsing failed: {}", e.getMessage());
             }
+
+            return SemanticSearchResponse.builder()
+                    .results(resultList)
+                    .analysis(analysis)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Semantic Search Tool Error: {}", e.getMessage(), e);
+            return SemanticSearchResponse.builder()
+                    .analysis("분석 중 오류가 발생했습니다: " + e.getMessage())
+                    .results(new ArrayList<>())
+                    .build();
         }
-
-        // 결과 DTO 매핑 (String 좌표 -> Double 변환)
-        List<AddressResponse> resultList = searchResults.stream()
-                .limit(5)
-                .map(info -> {
-                    Double lat = info.latitude();
-                    Double lng = info.longitude();
-                    return AddressResponse.builder()
-                            .aptSeq(info.aptSeq())
-                            .aptName(info.aptName())
-                            .dongName(info.address())
-                            .latitude(lat)
-                            .longitude(lng)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        log.debug("Semantic Search Results: size={}", resultList.size());
-        resultList.forEach(r -> log.debug(" - {} : lat={}, lng={}", r.getAptName(), r.getLatitude(), r.getLongitude()));
-
-        return SemanticSearchResponse.builder()
-                .results(resultList)
-                .analysis(analysis)
-                .build();
     }
 
     @Override
@@ -208,33 +312,6 @@ public class AIServiceImpl implements AIService {
                 .build();
     }
 
-    @Override
-    public FraudAnalysisResponse performFraudAnalysis(FraudAnalysisRequest request) {
-        // [전세사기] 임차인 편에 선 든든한 해결사 모드
-        String prompt = String.format(
-                "매물 데이터: [주소: %s, 매매가: %d만원, 보증금: %d만원, 선순위채권: %d만원]\n" +
-                "이 집이 안전한지 임차인 입장에서 아주 냉정하게 분석해주세요.\n" +
-                "형식:\n" +
-                "1. **🛡️ 안전 등급 진단**: (안전/주의/위험) 중 하나를 딱 잘라 말하고, 전세가율(매매가 대비 보증금+대출) %를 명시하세요.\n" +
-                "2. **🕵️ 핵심 분석**: '집주인 빚이 집값의 80%%나 돼요!' 처럼 쉬운 말로 위험성을 경고하세요.\n" +
-                "3. **💡 전문가의 조언**: 보증보험 가입 가능 여부나 특약 사항 등 실질적인 팁을 주세요.",
-                request.getAddress(), request.getMarketValue(), request.getDeposit(), request.getPriorDebt());
-        
-        String analysis = callGPT(prompt, "당신은 임차인의 돈을 지켜주는 정의로운 권리분석 전문가입니다. 돌려 말하지 말고 직설적으로 조언하세요.");
-        
-        int debtRatio = 0;
-        if (request.getMarketValue() > 0) {
-            debtRatio = (int) (((request.getDeposit() + request.getPriorDebt()) * 100) / request.getMarketValue());
-        }
-
-        String grade = debtRatio >= 80 ? "DANGER" : (debtRatio >= 70 ? "WARNING" : "SAFE");
-
-        return FraudAnalysisResponse.builder()
-                .safetyGrade(grade)
-                .message(analysis)
-                .debtRatio(debtRatio)
-                .build();
-    }
 
     @Override
     public String getRegionalAnalysis(String areaCode, String apartmentName) {
@@ -318,111 +395,6 @@ public class AIServiceImpl implements AIService {
         }
     }
 
-    @Override
-    public DocumentAnalysisResponse analyzeDocument(MultipartFile file) {
-        // [OCR] 문서 분석 (Multimodal)
-        try {
-            String instruction = "Analyze the provided image of a real estate document (Registry/Contract).\n" +
-                    "Extract the following values:\n" +
-                    "- 'deposit': Security Deposit (보증금/전세금) in KRW.\n" +
-                    "- 'marketValue': Estimated Market Value (매매가/시세) based on context, or 0 if unknown.\n" +
-                    "- 'priorDebt': Maximum Bond Amount (채권최고액/근저당) in KRW.\n" +
-                    "- 'address': The property address.\n" +
-                    "- 'summary': A concise one-line summary in Korean (e.g., '📄 [을지로3가 123] 등기부등본 분석 완료').\n" +
-                    "Response Format: JSON Object Only.\n" +
-                    "{ \"deposit\": 200000000, \"marketValue\": 300000000, \"priorDebt\": 0, \"address\": \"...\", \"summary\": \"...\" }";
 
-            // Resize Image (Max 1024px)
-            log.info("Original Image Size: {} bytes", file.getSize());
-            byte[] resizedBytes = resizeImage(file, 1024);
-            log.info("Resized Image Size: {} bytes", resizedBytes.length);
-            
-            ByteArrayResource resource = new ByteArrayResource(resizedBytes);
-            
-            MimeType mimeType = MimeTypeUtils.IMAGE_JPEG; // Force JPEG after resize
-            
-            Media media = new Media(mimeType, resource);
-            UserMessage userMessage = new UserMessage(instruction, List.of(media));
-            
-            Prompt prompt = new Prompt(List.of(userMessage),
-                OpenAiChatOptions.builder().model("gpt-4o").build());
-            
-            log.info(">>> Sending Request to AI Model (Payload Size: ~{} bytes)", resizedBytes.length);
-            long startTime = System.currentTimeMillis();
-            
-            var response = chatModel.call(prompt);
-            
-            long duration = System.currentTimeMillis() - startTime;
-            log.info("<<< AI Response Received (Time: {}ms)", duration);
-            
-            if (response != null && response.getResult() != null) {
-                String content = response.getResult().getOutput().getContent();
-                log.info("AI OCR Response Raw: {}", content); // Debug Log
 
-                // JSON Parsing
-                int jsonStart = content.indexOf("{");
-                int jsonEnd = content.lastIndexOf("}");
-                if (jsonStart != -1 && jsonEnd != -1) {
-                    String json = content.substring(jsonStart, jsonEnd + 1);
-                    return objectMapper.readValue(json, DocumentAnalysisResponse.class);
-                } else {
-                    log.error("JSON parsing failed. Content: {}", content);
-                }
-            }
-        } catch (org.springframework.ai.retry.NonTransientAiException e) {
-            log.warn("AI_ERROR [NonTransient]: Proxy rejected request (likely image size). Returning MOCK data for demonstration. Message: {}", e.getMessage());
-            
-            // Mock Fallback for Demo (since Proxy blocks images)
-            return DocumentAnalysisResponse.builder()
-                    .deposit(250000000L)
-                    .marketValue(320000000L)
-                    .priorDebt(0L)
-                    .address("서울시 강남구 역삼동 123-45 (모의 분석)")
-                    .summary("📄 [분석 완료] 등기부등본 내용 추출 성공 (Proxy 제한으로 인한 모의 결과)")
-                    .build();
-
-        } catch (Exception e) {
-            log.error("AI_ERROR [General]: class={}, message={}", e.getClass().getName(), e.getMessage(), e);
-        }
-        
-        // Fallback / Error
-        return DocumentAnalysisResponse.builder()
-                .deposit(0L)
-                .marketValue(0L)
-                .priorDebt(0L)
-                .address("분석 실패")
-                .summary("⚠️ 문서 분석 오류 발생 (로그 확인 필요)")
-                .build();
-    }
-
-    private byte[] resizeImage(MultipartFile originalFile, int maxDim) throws java.io.IOException {
-        BufferedImage originalImage = ImageIO.read(originalFile.getInputStream());
-        if (originalImage == null) return originalFile.getBytes(); // Fallback if not image
-
-        int width = originalImage.getWidth();
-        int height = originalImage.getHeight();
-        
-        // Calculate new dims
-        if (width > maxDim || height > maxDim) {
-            float aspectRatio = (float) width / height;
-            if (aspectRatio > 1) {
-                width = maxDim;
-                height = (int) (maxDim / aspectRatio);
-            } else {
-                height = maxDim;
-                width = (int) (maxDim * aspectRatio);
-            }
-        } else {
-            return originalFile.getBytes(); // No resize needed
-        }
-
-        BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = resizedImage.createGraphics();
-        g.drawImage(originalImage, 0, 0, width, height, null);
-        g.dispose();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(resizedImage, "jpg", baos);
-        return baos.toByteArray();
-    }
 }
