@@ -54,6 +54,8 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .address(request.address())
                 .pyung(request.pyung())
                 .dealAmount(request.dealAmount())
+                .latitude(request.latitude())
+                .longitude(request.longitude())
                 .build();
         
         favoriteMapper.insert(favorite);

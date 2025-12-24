@@ -20,5 +20,11 @@ public record FavoriteAddRequest(
     Integer pyung,
     
     @Schema(description = "거래가격", example = "15억 5000만원")
-    String dealAmount
+    String dealAmount,
+
+    @Schema(description = "위도", example = "37.5665")
+    Double latitude,
+
+    @Schema(description = "경도", example = "126.9780")
+    Double longitude
 ) {}
