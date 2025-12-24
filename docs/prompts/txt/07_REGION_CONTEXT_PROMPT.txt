@@ -1,0 +1,13 @@
+### 🗺️ Verified Region Information (CRITICAL - Use These Exact Names!)
+
+The user mentioned the following regions. These have been verified in the database.
+**IMPORTANT**: Use these EXACT region names in your SQL queries to avoid errors:
+
+{regionList}
+
+**Query Rules for These Regions:**
+- Use the exact column names (sido_name, gugun_name, dong_name) shown above
+- Use dong_code for joins with houseinfos table
+- For Sido filtering without physical sido_code: Use `SUBSTR(dong_code, 1, 2)` to match the first 2 digits
+- For Gugun filtering without physical gugun_code: Use `SUBSTR(dong_code, 1, 5)` to match the first 5 digits
+
