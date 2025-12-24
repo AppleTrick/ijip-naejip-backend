@@ -24,5 +24,6 @@ public class FavoriteApartment {
     private String dealAmount;
     private Double latitude;
     private Double longitude;
+    private Integer buildYear;
     private LocalDateTime createdAt;
 }

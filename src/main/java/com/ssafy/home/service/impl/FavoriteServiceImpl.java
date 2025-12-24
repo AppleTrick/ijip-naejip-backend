@@ -91,6 +91,7 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .dealAmount(fav.getDealAmount())
                 .latitude(fav.getLatitude())
                 .longitude(fav.getLongitude())
+                .buildYear(fav.getBuildYear())
                 .createdAt(fav.getCreatedAt() != null ? fav.getCreatedAt().format(DATE_FORMATTER) : null)
                 .build();
     }
