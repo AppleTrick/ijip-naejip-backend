@@ -49,4 +49,13 @@ public interface DongCodeMapper {
         """)
     @ResultMap("dongCodeResultMap")
     DongCodeResponse selectByCode(@Param("code") String code);
+
+    /**
+     * 지역명 토큰으로 검색 (시/도/구/군/동 모든 레벨)
+     * 토큰이 sido_name, gugun_name, dong_name 중 하나라도 매칭되면 반환
+     */
+    List<DongCodeResponse> searchByRegionToken(@Param("token") String token);
 }
+
+
+
