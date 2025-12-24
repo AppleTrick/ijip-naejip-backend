@@ -339,15 +339,28 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public String getComparisonSummary(String comparisonData) {
-        // [비교] 쇼핑 호스트 모드
-        String prompt = "다음 매물들을 비교해달라는 요청입니다: " + comparisonData + "\n" +
-                "사용자가 결정을 내리기 쉽게 '쇼핑 호스트' 톤으로 비교해주세요.\n" +
-                "형식:\n" +
-                "1. **⚖️ 한 줄 요약**: '가성비는 A가 좋지만, 몸이 편한 건 B네요!'\n" +
-                "2. **💎 매물별 매력 포인트**: 각 매물의 장점을 콕 집어 설명.\n" +
-                "3. **🙋 이런 분께 추천**: '신혼부부라면 A, 아이가 있다면 B를 추천해요!'";
+        // [비교] 쇼핑 호스트 + 데이터 분석가 모드
+        String prompt = "다음 매물들을 비교분석해주세요: " + comparisonData + "\n\n" +
+                "**[응답 필수 형식 - 반드시 JSON으로만 응답하세요]**\n" +
+                "{\n" +
+                "  \"summary\": \"마크다운 형식의 상세 분석 리포트\",\n" +
+                "  \"scores\": [\n" +
+                "    {\n" +
+                "      \"name\": \"아파트 이름\",\n" +
+                "      \"transportation\": 1~10 점수,\n" +
+                "      \"education\": 1~10 점수,\n" +
+                "      \"convenience\": 1~10 점수,\n" +
+                "      \"environment\": 1~10 점수,\n" +
+                "      \"futureValue\": 1~10 점수\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n\n" +
+                "**[분석 가이드]**\n" +
+                "1. summary에는 쇼핑 호스트처럼 친절하고 명쾌한 비교 분석 내용을 담으세요. (이모지, 불렛포인트 활용)\n" +
+                "2. scores에는 각 아파트의 특징을 5개 지표(교통, 학군, 편리사성, 환경, 가치)로 수치화하세요.\n" +
+                "3. 데이터가 부족하더라도 당신의 지식을 바탕으로 가장 합리적인 가상의 점수를 부여하세요.";
         
-        return callGPT(prompt, "당신은 결정장애를 해결해주는 명쾌한 쇼핑 호스트입니다.");
+        return callGPT(prompt, "당신은 냉철한 데이터 분석가이자 설득력 있는 쇼핑 호스트입니다. 반드시 요청한 JSON 규격을 엄수하세요.");
     }
 
     @Override
