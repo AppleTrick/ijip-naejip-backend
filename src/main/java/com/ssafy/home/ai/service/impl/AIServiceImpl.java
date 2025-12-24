@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
@@ -341,57 +339,43 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public String getComparisonSummary(String comparisonData) {
-        // [비교] 쇼핑 호스트 모드
-        String prompt = "다음 매물들을 비교해달라는 요청입니다: " + comparisonData + "\n" +
-                "사용자가 결정을 내리기 쉽게 '쇼핑 호스트' 톤으로 비교해주세요.\n" +
-                "형식:\n" +
-                "1. **⚖️ 한 줄 요약**: '가성비는 A가 좋지만, 몸이 편한 건 B네요!'\n" +
-                "2. **💎 매물별 매력 포인트**: 각 매물의 장점을 콕 집어 설명.\n" +
-                "3. **🙋 이런 분께 추천**: '신혼부부라면 A, 아이가 있다면 B를 추천해요!'";
+        // [비교] 쇼핑 호스트 + 데이터 분석가 모드
+        String prompt = "다음 매물들을 비교분석해주세요: " + comparisonData + "\n\n" +
+                "**[응답 필수 형식 - 반드시 JSON으로만 응답하세요]**\n" +
+                "{\n" +
+                "  \"summary\": \"마크다운 형식의 상세 분석 리포트\",\n" +
+                "  \"scores\": [\n" +
+                "    {\n" +
+                "      \"name\": \"아파트 이름\",\n" +
+                "      \"transportation\": 1~10 점수,\n" +
+                "      \"education\": 1~10 점수,\n" +
+                "      \"convenience\": 1~10 점수,\n" +
+                "      \"environment\": 1~10 점수,\n" +
+                "      \"futureValue\": 1~10 점수\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n\n" +
+                "**[분석 가이드]**\n" +
+                "1. summary에는 쇼핑 호스트처럼 친절하고 명쾌한 비교 분석 내용을 담으세요. (이모지, 불렛포인트 활용)\n" +
+                "2. scores에는 각 아파트의 특징을 5개 지표(교통, 학군, 편리사성, 환경, 가치)로 수치화하세요.\n" +
+                "3. 데이터가 부족하더라도 당신의 지식을 바탕으로 가장 합리적인 가상의 점수를 부여하세요.";
         
-        return callGPT(prompt, "당신은 결정장애를 해결해주는 명쾌한 쇼핑 호스트입니다.");
+        return callGPT(prompt, "당신은 냉철한 데이터 분석가이자 설득력 있는 쇼핑 호스트입니다. 반드시 요청한 JSON 규격을 엄수하세요.");
     }
 
     @Override
-    public Flux<String> analyzeLocationAttractiveness(String aptName, String address) {
-        // [Fast Quick Analysis] Stream Response
-        String instruction = String.format(
-            "Analyze [%s] at [%s]. List 3 best features (e.g. Subway, Park) in Korean.\n" +
-            "Output style:\n" +
-            "✨ [Key]: 1 short sentence.\n" +
-            "✨ [Key]: 1 short sentence.\n" +
-            "✨ [Key]: 1 short sentence.", 
+    public String analyzeLocationAttractiveness(String aptName, String address) {
+        String prompt = String.format(
+            "분석 대상: [%s] (주소: %s)\n" +
+            "이 단지의 입지적 매력 3가지를 '✨ [키워드]: 설명' 형식으로 아주 짧고 명쾌하게 분석해 주세요.\n" +
+            "**[출력 규칙]**\n" +
+            "1. 반드시 3줄로 작성하세요.\n" +
+            "2. 각 줄은 ✨ 이모지로 시작하세요.\n" +
+            "3. 줄바꿈을 포함하여 가독성 있게 응답하세요.",
             aptName, address
         );
         
-        try {
-            UserMessage userMessage = new UserMessage(instruction);
-            Prompt prompt = new Prompt(List.of(userMessage));
-            
-            AtomicBoolean hasEmitted = new AtomicBoolean(false);
-            
-            return chatModel.stream(prompt)
-                .map(response -> {
-                    if (response.getResult() == null || response.getResult().getOutput() == null) return "";
-                    String content = response.getResult().getOutput().getContent();
-                    if (content != null && !content.isEmpty()) {
-                        hasEmitted.set(true);
-                    }
-                    return content;
-                })
-                .filter(content -> content != null && !content.isEmpty())
-                .onErrorResume(e -> {
-                    log.error("Streaming Error", e);
-                    // If we have already sent some data, don't append an error message to the successful stream
-                    if (hasEmitted.get()) {
-                        return Flux.empty();
-                    }
-                    return Flux.just("분석 정보를 가져오는 중 오류가 발생했습니다.");
-                });
-        } catch (Exception e) {
-            log.error("Stream Init Error", e);
-            return Flux.just("초기화 오류가 발생했습니다.");
-        }
+        return callGPT(prompt, "당신은 요점만 콕 짚어주는 입지 분석 전문가입니다.");
     }
 
 

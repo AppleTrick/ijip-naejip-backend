@@ -1,7 +1,5 @@
 package com.ssafy.home.ai.controller;
 
-import com.ssafy.home.ai.dto.FraudAnalysisRequest;
-import com.ssafy.home.ai.dto.FraudAnalysisResponse;
 import com.ssafy.home.ai.dto.ParseFilterResponse;
 import com.ssafy.home.ai.dto.SemanticSearchRequest;
 import com.ssafy.home.ai.dto.SemanticSearchResponse;
@@ -55,12 +53,13 @@ public class AIFeatureController {
         return ResponseEntity.ok(CommonResponse.success(summary));
     }
 
-    @Operation(summary = "AI 입지 매력 분석 (Stream)", description = "SSE 스트림으로 입지 분석 결과를 실시간으로 전송합니다")
-    @GetMapping(value = "/location-attraction", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
-    public reactor.core.publisher.Flux<String> analyzeLocationAttractiveness(
+    @Operation(summary = "AI 입지 매력 분석", description = "단건 요청으로 입지 분석 결과를 반환합니다")
+    @GetMapping("/location-attraction")
+    public ResponseEntity<CommonResponse<String>> analyzeLocationAttractiveness(
             @RequestParam String aptName,
             @RequestParam String address) {
-        return aiService.analyzeLocationAttractiveness(aptName, address);
+        String analysis = aiService.analyzeLocationAttractiveness(aptName, address);
+        return ResponseEntity.ok(CommonResponse.success(analysis));
     }
 
 }

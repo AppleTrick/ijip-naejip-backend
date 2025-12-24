@@ -20,6 +20,7 @@
             hi.avg_price AS dealAmount,
             hi.latitude AS latitude,
             hi.longitude AS longitude,
+            hi.build_year AS buildYear,
             uh.created_at AS createdAt
         FROM user_houses uh
         LEFT JOIN houseinfos hi ON uh.apt_seq = hi.apt_seq

@@ -33,6 +33,9 @@ public record FavoriteResponse(
     @Schema(description = "경도")
     Double longitude,
     
+    @Schema(description = "건축년도")
+    Integer buildYear,
+    
     @Schema(description = "등록일시")
     String createdAt
 ) {}
