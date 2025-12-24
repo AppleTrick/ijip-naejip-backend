@@ -7,81 +7,129 @@
 <mapper namespace="com.ssafy.home.mapper.AreaMapper">
     <!-- 법정시 단위 조회 -->
     <select id="findSidoByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        WITH sido_price AS (
+            SELECT
+                CONCAT(SUBSTRING(dc.dong_code, 1, 2), '00000000') AS region_code,
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
+            FROM apt_pyung_stats aps
+            INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
+            INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+            WHERE aps.avg_price IS NOT NULL
+              AND aps.pyung IS NOT NULL
+              AND aps.pyung != 0
+              AND dc.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+              AND dc.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+            GROUP BY region_code
+        )
         SELECT
-            dong_code AS dongCode,
-            sido_name AS sidoName,
+            sido.dong_code AS dongCode,
+            sido.sido_name AS sidoName,
             NULL AS gugunName,
             NULL AS dongName,
             NULL AS aptSeq,
             NULL AS aptName,
             NULL AS aptDong,
-            latitude,
-            longitude,
-            avg_price AS avgPrice,
+            sido.latitude,
+            sido.longitude,
+            CAST(ROUND(sp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
+            NULL as avgPrice,
             NULL as primaryPyung
-        FROM dongcodes
-        WHERE gugun_name IS NULL
-            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
-            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        FROM dongcodes sido
+        LEFT JOIN sido_price sp ON sp.region_code = sido.dong_code
+        WHERE sido.gugun_name IS NULL
+            AND sido.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND sido.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         <if test="price != null and price.minPrice != null">
-            AND avg_price &gt;= #{price.minPrice}
+            AND sp.avg_price_per_pyung &gt;= #{price.minPrice}
         </if>
         <if test="price != null and price.maxPrice != null">
-            AND avg_price &lt;= #{price.maxPrice}
+            AND sp.avg_price_per_pyung &lt;= #{price.maxPrice}
         </if>
         LIMIT 100
     </select>
 
     <!-- 법정구 단위 조회 -->
     <select id="findGugunByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        WITH gugun_price AS (
+            SELECT
+                CONCAT(SUBSTRING(dc.dong_code, 1, 5), '00000') AS region_code,
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
+            FROM apt_pyung_stats aps
+            INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
+            INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+            WHERE aps.avg_price IS NOT NULL
+              AND aps.pyung IS NOT NULL
+              AND aps.pyung != 0
+              AND dc.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+              AND dc.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+            GROUP BY region_code
+        )
         SELECT
-            dong_code AS dongCode,
-            sido_name AS sidoName,
-            gugun_name AS gugunName,
+            gugun.dong_code AS dongCode,
+            gugun.sido_name AS sidoName,
+            gugun.gugun_name AS gugunName,
             NULL AS dongName,
             NULL AS aptSeq,
             NULL AS aptName,
             NULL AS aptDong,
-            latitude,
-            longitude,
-            avg_price AS avgPrice,
+            gugun.latitude,
+            gugun.longitude,
+            CAST(ROUND(gp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
+            NULL as avgPrice,
             NULL as primaryPyung
-        FROM dongcodes
-        WHERE gugun_name IS NOT NULL AND dong_name IS NULL
-            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
-            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        FROM dongcodes gugun
+        LEFT JOIN gugun_price gp ON gp.region_code = gugun.dong_code
+        WHERE gugun.gugun_name IS NOT NULL AND gugun.dong_name IS NULL
+            AND gugun.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND gugun.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         <if test="price != null and price.minPrice != null">
-            AND avg_price &gt;= #{price.minPrice}
+            AND gp.avg_price_per_pyung &gt;= #{price.minPrice}
         </if>
         <if test="price != null and price.maxPrice != null">
-            AND avg_price &lt;= #{price.maxPrice}
+            AND gp.avg_price_per_pyung &lt;= #{price.maxPrice}
         </if>
         LIMIT 100
     </select>
 
     <!-- 법정동 단위 조회 -->
     <select id="findDongByBoundingBox" resultType="com.ssafy.home.dto.AddressResponse">
+        WITH dong_price AS (
+            SELECT
+                dc.dong_code AS region_code,
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
+            FROM apt_pyung_stats aps
+            INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
+            INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
+            WHERE aps.avg_price IS NOT NULL
+              AND aps.pyung IS NOT NULL
+              AND aps.pyung != 0
+              AND dc.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+              AND dc.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+            GROUP BY dc.dong_code
+        )
         SELECT
-            dong_code AS dongCode,
-            sido_name AS sidoName,
-            gugun_name AS gugunName,
-            dong_name AS dongName,
+            dong.dong_code AS dongCode,
+            dong.sido_name AS sidoName,
+            dong.gugun_name AS gugunName,
+            dong.dong_name AS dongName,
             NULL AS aptSeq,
             NULL AS aptName,
             NULL AS aptDong,
-            latitude,
-            longitude,
-            avg_price AS avgPrice,
+            dong.latitude,
+            dong.longitude,
+            CAST(ROUND(dp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
+            NULL as avgPrice,
             NULL as primaryPyung
-        FROM dongcodes
-        WHERE dong_name IS NOT NULL
-            AND latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
-            AND longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
+        FROM dongcodes dong
+        LEFT JOIN dong_price dp ON dp.region_code = dong.dong_code
+        WHERE dong.dong_name IS NOT NULL
+            AND dong.latitude BETWEEN #{geo.minLat} AND #{geo.maxLat}
+            AND dong.longitude BETWEEN #{geo.minLng} AND #{geo.maxLng}
         <if test="price != null and price.minPrice != null">
-            AND avg_price &gt;= #{price.minPrice}
+            AND dp.avg_price_per_pyung &gt;= #{price.minPrice}
         </if>
         <if test="price != null and price.maxPrice != null">
-            AND avg_price &lt;= #{price.maxPrice}
+            AND dp.avg_price_per_pyung &lt;= #{price.maxPrice}
         </if>
         LIMIT 100
     </select>
@@ -99,7 +147,8 @@
             rep.latitude AS latitude,
             rep.longitude AS longitude,
             rep.avg_price AS avgPrice,
-            rep.pyung AS primaryPyung
+            rep.pyung AS primaryPyung,
+            CASE WHEN rep.pyung IS NOT NULL AND rep.pyung != 0 THEN CAST(ROUND(rep.avg_price / rep.pyung) AS SIGNED) ELSE NULL END AS pricePerPyung
         FROM dongcodes dc
         INNER JOIN (
             -- 좌표 범위 내 대표 평형 선택
@@ -161,7 +210,8 @@
             rep.latitude AS latitude,
             rep.longitude AS longitude,
             rep.avg_price AS avgPrice,
-            rep.pyung AS primaryPyung
+            rep.pyung AS primaryPyung,
+            CASE WHEN rep.pyung IS NOT NULL AND rep.pyung != 0 THEN CAST(ROUND(rep.avg_price / rep.pyung) AS SIGNED) ELSE NULL END AS pricePerPyung
         FROM houseinfos hi
         INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
         INNER JOIN (
@@ -210,4 +260,3 @@
         LIMIT 100
     </select>
 </mapper>
-

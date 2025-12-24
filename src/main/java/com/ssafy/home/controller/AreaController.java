@@ -21,7 +21,12 @@ import java.util.List;
 public class AreaController {
     private final AreaService areaService;
 
-    @Operation(summary = "사각형 범위 기반 지역 목록 조회", description = "사각형 좌표 범위에 따른 지역 목록을 조회합니다")
+    @Operation(
+        summary = "사각형 범위 기반 지역 목록 조회",
+        description = "사각형 좌표 범위에 따른 지역 목록을 조회합니다.\n" +
+                "- DONG/GUGUN/SIDO 범위: minPrice/maxPrice는 평당가(만원) 기준\n" +
+                "- APT/APT_DONG 범위: minPrice/maxPrice는 총 거래가(만원) 기준"
+    )
     @GetMapping
     public ResponseEntity<CommonResponse<List<AddressResponse>>> searchAreaAddress(
             @RequestParam(value = "minLat") Double minLat,
@@ -36,17 +41,10 @@ public class AreaController {
         ) {
 
         boolean isSearchForApt = (scope == AreaScope.APT || scope == AreaScope.APT_DONG);
-        boolean isSearchWithPyung = (minPyung != null || maxPyung != null);
-
-        if (!isSearchForApt && isSearchWithPyung) {
-            return ResponseEntity.badRequest().body(
-                CommonResponse.fail("400", "평수 필터는 아파트(APT) 또는 아파트 동(APT_DONG) 범위에서만 사용할 수 있습니다.")
-            );
-        }
 
         GeoBoundParam geoBoundParam = new GeoBoundParam(minLat, maxLat, minLng, maxLng);
-        PriceRangeParam priceRangeParam = new PriceRangeParam(minPrice, maxPrice);
-        PyungRangeParam pyungRangeParam = new PyungRangeParam(minPyung, maxPyung);
+        PriceRangeParam priceRangeParam = isSearchForApt ? new PriceRangeParam(minPrice, maxPrice) : null;
+        PyungRangeParam pyungRangeParam = isSearchForApt ? new PyungRangeParam(minPyung, maxPyung) : null;
         List<AddressResponse> areas = areaService.searchAreaAddress(geoBoundParam, scope, priceRangeParam, pyungRangeParam);
         return ResponseEntity.ok(CommonResponse.success(areas));
     }

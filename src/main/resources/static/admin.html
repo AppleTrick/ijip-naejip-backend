@@ -353,6 +353,11 @@
 
     <script>
         const API_BASE = '/api/v1';
+        const APT_SCOPES = new Set(['APT', 'APT_DONG']);
+
+        function isAptScope(scope) {
+            return APT_SCOPES.has(scope);
+        }
 
         // 카카오맵 초기화
         let map;
@@ -403,6 +408,11 @@
 
         // 가격 표시 업데이트
         function updatePriceDisplay() {
+            const scope = document.getElementById('scopeSelect').value;
+            if (!isAptScope(scope)) {
+                document.getElementById('priceRangeDisplay').textContent = '지역 범위에서는 자동 적용됩니다';
+                return;
+            }
             const minPrice = document.getElementById('minPriceSlider').value;
             const maxPrice = document.getElementById('maxPriceSlider').value;
             document.getElementById('priceRangeDisplay').textContent = `${minPrice}억 ~ ${maxPrice}억`;
@@ -410,6 +420,11 @@
 
         // 평수 표시 업데이트
         function updatePyungDisplay() {
+            const scope = document.getElementById('scopeSelect').value;
+            if (!isAptScope(scope)) {
+                document.getElementById('pyungRangeDisplay').textContent = '지역 범위에서는 자동 적용됩니다';
+                return;
+            }
             const minPyung = document.getElementById('minPyungSlider').value;
             const maxPyung = document.getElementById('maxPyungSlider').value;
             document.getElementById('pyungRangeDisplay').textContent = `${minPyung}평 ~ ${maxPyung}평`;
@@ -485,8 +500,15 @@
         }
 
         // 말풍선 추가 (마커 대신 사용)
-        function addMarker(position, title, info) {
-            // 클릭 가능한 말풍선 생성
+        function addMarker(position, titleText, info, pricePerPyungValue) {
+            const priceLine = pricePerPyungValue != null
+                ? `<span style="color:#444;font-weight:600;">${Number(pricePerPyungValue).toLocaleString()}만원/평</span>`
+                : '<span style="color:#bbb;">평당가 정보 없음</span>';
+            const titleHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                    <span>${titleText}</span>
+                                    <span style="font-size:12px;">${priceLine}</span>
+                                </div>`;
+
             const bubbleContent = document.createElement('div');
             bubbleContent.style.cssText = `
                 background: white;
@@ -501,7 +523,7 @@
                 cursor: pointer;
                 transition: all 0.2s;
             `;
-            bubbleContent.textContent = title;
+            bubbleContent.innerHTML = titleHtml;
 
             // 호버 효과
             bubbleContent.onmouseover = function() {
@@ -533,15 +555,12 @@
             });
 
             // 말풍선 클릭 이벤트
+            bubbleContent.innerHTML = titleHtml;
             bubbleContent.onclick = function(e) {
                 e.stopPropagation();
-
-                // 기존에 열려있는 인포윈도우가 있으면 닫기
                 if (currentInfoWindow) {
                     currentInfoWindow.close();
                 }
-
-                // 같은 말풍선을 다시 클릭한 경우가 아니라면 새 인포윈도우 열기
                 if (currentInfoWindow !== detailInfoWindow) {
                     detailInfoWindow.open(map);
                     currentInfoWindow = detailInfoWindow;
@@ -577,17 +596,17 @@
                 scope: scope
             });
 
-            // 가격 필터 추가 (억 단위를 만원 단위로 변환: 1억 = 10000만원)
-            const minPriceValue = parseInt(document.getElementById('minPriceSlider').value);
-            const maxPriceValue = parseInt(document.getElementById('maxPriceSlider').value);
-            if (minPriceValue > 0) params.append('minPrice', minPriceValue * 10000);
-            if (maxPriceValue < 100) params.append('maxPrice', maxPriceValue * 10000);
+            if (isAptScope(scope)) {
+                const minPriceValue = parseInt(document.getElementById('minPriceSlider').value);
+                const maxPriceValue = parseInt(document.getElementById('maxPriceSlider').value);
+                if (minPriceValue > 0) params.append('minPrice', minPriceValue * 10000);
+                if (maxPriceValue < 100) params.append('maxPrice', maxPriceValue * 10000);
 
-            // 평수 필터 추가
-            const minPyungValue = parseInt(document.getElementById('minPyungSlider').value);
-            const maxPyungValue = parseInt(document.getElementById('maxPyungSlider').value);
-            if (minPyungValue > 0) params.append('minPyung', minPyungValue);
-            if (maxPyungValue < 100) params.append('maxPyung', maxPyungValue);
+                const minPyungValue = parseInt(document.getElementById('minPyungSlider').value);
+                const maxPyungValue = parseInt(document.getElementById('maxPyungSlider').value);
+                if (minPyungValue > 0) params.append('minPyung', minPyungValue);
+                if (maxPyungValue < 100) params.append('maxPyung', maxPyungValue);
+            }
 
             const resultBox = document.getElementById('searchResult');
             resultBox.style.display = 'block';
@@ -605,6 +624,7 @@
                     console.log('검색 결과:', areas);
 
                     areas.forEach(area => {
+                        const isAptScopeSelection = isAptScope(scope);
                         // latitude, longitude 값 확인 (문자열 또는 숫자일 수 있음)
                         const lat = parseFloat(area.latitude);
                         const lng = parseFloat(area.longitude);
@@ -616,11 +636,26 @@
                             let info = '';
 
                             // 평균 가격 포맷팅
-                            const avgPriceText = area.avgPrice
-                                ? `평균 가격: ${(area.avgPrice / 10000).toFixed(0)}억원`
-                                : '가격 정보 없음';
+                            const avgPriceValue = area.avgPrice;
+                            const pricePerPyungValue = area.pricePerPyung;
+                            const formattedAvgPrice = avgPriceValue != null
+                                ? `${(avgPriceValue / 10000).toFixed(1)}억`
+                                : null;
+                            const formattedPricePerPyung = pricePerPyungValue != null
+                                ? `${Number(pricePerPyungValue).toLocaleString()}만원`
+                                : null;
+                            const priceTextParts = [];
+                            if (formattedAvgPrice) {
+                                priceTextParts.push(`대표 평균가: ${formattedAvgPrice}`);
+                            }
+                            if (formattedPricePerPyung) {
+                                priceTextParts.push(`평당가: ${formattedPricePerPyung}`);
+                            }
+                            const priceText = priceTextParts.length ? priceTextParts.join('<br>') : '가격 정보 없음';
+                            const priceSummaryForTitle = isAptScopeSelection
+                                ? (formattedAvgPrice ? ` ${formattedAvgPrice}` : (formattedPricePerPyung ? ` ${formattedPricePerPyung}/평` : ''))
+                                : (formattedPricePerPyung ? ` ${formattedPricePerPyung}/평` : '');
 
-                            // 대표 평수 포맷팅
                             const primaryPyungText = area.primaryPyung
                                 ? `대표 평수: ${area.primaryPyung}평`
                                 : '';
@@ -638,7 +673,7 @@
                                     title += ` ${area.primaryPyung}평`;
                                 }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
-                                        ${avgPriceText}<br>
+                                        ${priceText}<br>
                                         ${primaryPyungText ? primaryPyungText + '<br>' : ''}
                                         아파트동: ${area.aptDong || 'N/A'}<br>
                                         아파트코드: ${area.aptSeq || 'N/A'}`;
@@ -651,7 +686,7 @@
                                     title += ` ${area.primaryPyung}평`;
                                 }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''} ${area.dongName || ''}<br>
-                                        ${avgPriceText}<br>
+                                        ${priceText}<br>
                                         ${primaryPyungText ? primaryPyungText + '<br>' : ''}
                                         아파트코드: ${area.aptSeq || 'N/A'}`;
                             } else if (scope === 'DONG') {
@@ -660,7 +695,7 @@
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
                                 }
                                 info = `${area.sidoName || ''} ${area.gugunName || ''}<br>
-                                        ${avgPriceText}<br>
+                                        ${priceText}<br>
                                         동코드: ${area.dongCode || 'N/A'}`;
                             } else if (scope === 'GUGUN') {
                                 title = area.gugunName || '구군 정보 없음';
@@ -668,16 +703,16 @@
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
                                 }
                                 info = `${area.sidoName || ''}<br>
-                                        ${avgPriceText}`;
+                                        ${priceText}`;
                             } else if (scope === 'SIDO') {
                                 title = area.sidoName || '시도 정보 없음';
                                 if (area.avgPrice) {
                                     title += ` (${(area.avgPrice / 10000).toFixed(0)}억)`;
                                 }
-                                info = avgPriceText;
+                                info = priceText;
                             }
 
-                            addMarker(position, title, info);
+                            addMarker(position, title, info, pricePerPyungValue);
                         }
                     });
 
@@ -704,8 +739,11 @@
         window.addEventListener('load', function() {
             initMap();
             initSliders();
+            document.getElementById('scopeSelect').addEventListener('change', function() {
+                updatePriceDisplay();
+                updatePyungDisplay();
+            });
         });
     </script>
 </body>
 </html>
-
