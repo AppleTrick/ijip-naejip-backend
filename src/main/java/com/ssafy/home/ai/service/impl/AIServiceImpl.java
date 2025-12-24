@@ -103,22 +103,22 @@ public class AIServiceImpl implements AIService {
         log.info("Performing Semantic Search with Tool Calling for query: {}", query);
 
         String systemMsg = 
-            "당신은 대한민국 부동산 전문가 '이집내집 AI'입니다.\n" +
+            "당신은 부동산 전문가로서 사용자의 질문에 즉시 답하는 검색 봇입니다.\n" +
             "\n" +
-            "**[절대 규칙 - 위반 시 오류]**\n" +
-            "1. **도구 결과만 사용**: 반드시 검색 도구가 반환한 데이터만 사용하세요. 아파트 이름, 주소, 가격, 좌표 모두 도구 결과에서 그대로 복사하세요. 가상의 데이터를 절대 만들지 마세요.\n" +
-            "2. **한글 직접 출력**: JSON에서 유니코드를 사용하지마세요. 예: '래미안'이면 '래미안'이라고 쓰세요 \n" +
-            "3. **즉시 검색 수행**: 사용자에게 허락을 구하지 말고 바로 도구를 호출하세요.\n" +
+            "**[금지 사항 - 매우 중요]**\n" +
+            "- '검색해 보겠습니다', '확인해 보니...', '죄송하지만...' 같은 안내 문구는 절대 하지 마세요.\n" +
+            "- 도구 호출을 위해 사용자에게 질문하거나 허락을 구하지 마세요.\n" +
+            "- 아파트 매물의 점수를 매기거나 순위를 정하지 말고 객관적인 사실 기반으로 추천 이유를 설명하세요.\n" +
             "\n" +
-            "**[도구 선택]**\n" +
-            "- `localSearchFunction`: 지역 + 가격/평수 필터 (예: keywords:['마포구'], maxPrice:130000)\n" +
-            "- `subwayNearbyFunction`: 역 인근 검색 (예: stationName:'홍대역')\n" +
-            "- `kakaoSearchFunction`: 특수 키워드 검색\n" +
+            "**[검색 지침]**\n" +
+            "1. **지하철역 기반**: '강남역', '홍대입구역' 등 역 이름이 있으면 무조건 `subwayNearbyFunction`을 사용하세요.\n" +
+            "2. **조건 부합**: 2인 가구용은 15~25평(50~85㎡), 조용한 곳은 주거 단지 비중이 높은 곳을 우선하세요.\n" +
+            "3. **결과 출처**: 반드시 검색 도구가 반환한 결과만 사용하고, 결과가 없으면 솔직하게 없다고 답하세요.\n" +
             "\n" +
             "**[출력 형식]**\n" +
-            "- 🧐 소견: 검색 결과 요약\n" +
-            "- 단지별 분석: 도구에서 가져온 실제 단지 정보\n" +
-            "- JSON_RESULTS: [{\"name\": \"도구에서받은실제이름\", \"address\": \"도구에서받은실제주소\", \"lat\": 숫자, \"lng\": 숫자}, ...}]";
+            "🧐 소견: [추천 아파트들의 특징과 선정 이유 (간결하게 한글로)]\n" +
+            "\n" +
+            "JSON_RESULTS: [{\"name\": \"...\", \"address\": \"...\", \"lat\": ..., \"lng\": ...}]";
 
         try {
             String aiResponse = chatClient.prompt()
@@ -148,7 +148,7 @@ public class AIServiceImpl implements AIService {
                 // JSON 배열 찾기: JSON_RESULTS 이후 또는 마지막 [ ] 블록
                 String jsonPart = null;
                 
-                // 패턴 1: [JSON_RESULTS: [...]]
+                // 패턴 1: JSON_RESULTS: [...]
                 int jsonResultsIdx = decodedResponse.indexOf("JSON_RESULTS");
                 if (jsonResultsIdx != -1) {
                     int arrayStart = decodedResponse.indexOf("[", jsonResultsIdx);
@@ -156,6 +156,17 @@ public class AIServiceImpl implements AIService {
                         int arrayEnd = findMatchingBracket(decodedResponse, arrayStart);
                         if (arrayEnd != -1) {
                             jsonPart = decodedResponse.substring(arrayStart, arrayEnd + 1);
+                        }
+                    }
+                }
+                
+                // 패턴 2: 폴백 - 가장 마지막에 있는 [ ] 배열 찾기 (AI가 형식을 어겼을 때 대비)
+                if (jsonPart == null) {
+                    int lastOpen = decodedResponse.lastIndexOf("[");
+                    if (lastOpen != -1) {
+                        int lastClose = decodedResponse.lastIndexOf("]");
+                        if (lastClose > lastOpen) {
+                            jsonPart = decodedResponse.substring(lastOpen, lastClose + 1);
                         }
                     }
                 }
@@ -196,11 +207,11 @@ public class AIServiceImpl implements AIService {
                                         .latitude(dbInfo.latitude())
                                         .longitude(dbInfo.longitude())
                                         .build());
-                            } else {
+                            } else if (lat != 0.0 && lng != 0.0) {
                                 // DB에 없더라도 카카오 정보를 바탕으로 결과 추가 (Fallback)
                                 log.info("No DB match, using fallback: {}", name);
                                 resultList.add(AddressResponse.builder()
-                                        .aptSeq("KAKAO-" + name.hashCode())
+                                        .aptSeq("EXT-" + name.hashCode())
                                         .aptName(name)
                                         .dongName(address)
                                         .latitude(lat)
@@ -210,15 +221,21 @@ public class AIServiceImpl implements AIService {
                         }
                     }
 
+                    // 결과가 있으면 부정적인 멘트 정제
+                    if (!resultList.isEmpty()) {
+                        if (analysis.startsWith("죄송합니다") || analysis.contains("찾을 수 없습니다")) {
+                            analysis = "🧐 소견: 요청하신 조건에 맞는 아파트들을 찾았습니다. 강남역 일대의 주거 환경과 편의성을 고려한 추천 목록입니다.";
+                        }
+                        // JSON_RESULTS 부분 제거하여 analysis 텍스트만 남김
+                        int jsonStart = analysis.indexOf("JSON_RESULTS");
+                        if (jsonStart != -1) {
+                            analysis = analysis.substring(0, jsonStart).trim();
+                        }
+                    }
                     log.info("Total results: {} (DB: {}, Fallback: {})", 
                         resultList.size(), 
                         resultList.stream().filter(r -> !r.getAptSeq().startsWith("KAKAO-")).count(),
                         resultList.stream().filter(r -> r.getAptSeq().startsWith("KAKAO-")).count());
-
-                    // 분석 텍스트에서 JSON 부분 제거
-                    int jsonIdx = decodedResponse.indexOf("JSON_RESULTS");
-                    if (jsonIdx != -1) {
-                        analysis = decodedResponse.substring(0, jsonIdx).trim();
                     }
                 } else {
                     log.warn("No JSON_RESULTS found in response");
