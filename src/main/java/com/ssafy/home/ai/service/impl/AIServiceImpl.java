@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
@@ -353,45 +351,18 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
-    public Flux<String> analyzeLocationAttractiveness(String aptName, String address) {
-        // [Fast Quick Analysis] Stream Response
-        String instruction = String.format(
-            "Analyze [%s] at [%s]. List 3 best features (e.g. Subway, Park) in Korean.\n" +
-            "Output style:\n" +
-            "✨ [Key]: 1 short sentence.\n" +
-            "✨ [Key]: 1 short sentence.\n" +
-            "✨ [Key]: 1 short sentence.", 
+    public String analyzeLocationAttractiveness(String aptName, String address) {
+        String prompt = String.format(
+            "분석 대상: [%s] (주소: %s)\n" +
+            "이 단지의 입지적 매력 3가지를 '✨ [키워드]: 설명' 형식으로 아주 짧고 명쾌하게 분석해 주세요.\n" +
+            "**[출력 규칙]**\n" +
+            "1. 반드시 3줄로 작성하세요.\n" +
+            "2. 각 줄은 ✨ 이모지로 시작하세요.\n" +
+            "3. 줄바꿈을 포함하여 가독성 있게 응답하세요.",
             aptName, address
         );
         
-        try {
-            UserMessage userMessage = new UserMessage(instruction);
-            Prompt prompt = new Prompt(List.of(userMessage));
-            
-            AtomicBoolean hasEmitted = new AtomicBoolean(false);
-            
-            return chatModel.stream(prompt)
-                .map(response -> {
-                    if (response.getResult() == null || response.getResult().getOutput() == null) return "";
-                    String content = response.getResult().getOutput().getContent();
-                    if (content != null && !content.isEmpty()) {
-                        hasEmitted.set(true);
-                    }
-                    return content;
-                })
-                .filter(content -> content != null && !content.isEmpty())
-                .onErrorResume(e -> {
-                    log.error("Streaming Error", e);
-                    // If we have already sent some data, don't append an error message to the successful stream
-                    if (hasEmitted.get()) {
-                        return Flux.empty();
-                    }
-                    return Flux.just("분석 정보를 가져오는 중 오류가 발생했습니다.");
-                });
-        } catch (Exception e) {
-            log.error("Stream Init Error", e);
-            return Flux.just("초기화 오류가 발생했습니다.");
-        }
+        return callGPT(prompt, "당신은 요점만 콕 짚어주는 입지 분석 전문가입니다.");
     }
 
 
