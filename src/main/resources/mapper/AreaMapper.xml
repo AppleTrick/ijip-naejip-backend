@@ -54,8 +54,7 @@
         WITH gugun_price AS (
             SELECT
                 CONCAT(SUBSTRING(dc.dong_code, 1, 5), '00000') AS region_code,
-                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung,
-                AVG(aps.avg_price) AS avg_price
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
             FROM apt_pyung_stats aps
             INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
             INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
@@ -77,7 +76,7 @@
             gugun.latitude,
             gugun.longitude,
             CAST(ROUND(gp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
-            CAST(ROUND(gp.avg_price) AS SIGNED) as avgPrice,
+            gugun.avg_price as avgPrice,
             NULL as primaryPyung
         FROM dongcodes gugun
         LEFT JOIN gugun_price gp ON gp.region_code = gugun.dong_code
@@ -98,8 +97,7 @@
         WITH dong_price AS (
             SELECT
                 dc.dong_code AS region_code,
-                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung,
-                AVG(aps.avg_price) AS avg_price
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
             FROM apt_pyung_stats aps
             INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
             INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
@@ -121,7 +119,7 @@
             dong.latitude,
             dong.longitude,
             CAST(ROUND(dp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
-            CAST(ROUND(dp.avg_price) AS SIGNED) as avgPrice,
+            dong.avg_price as avgPrice,
             NULL as primaryPyung
         FROM dongcodes dong
         LEFT JOIN dong_price dp ON dp.region_code = dong.dong_code
@@ -214,7 +212,7 @@
             rep.longitude AS longitude,
             rep.avg_price AS avgPrice,
             rep.pyung AS primaryPyung,
-            CASE WHEN rep.pyung IS NOT NULL AND rep.pyung != 0 THEN CAST(ROUND(rep.avg_price / rep.pyung) AS SIGNED) ELSE NULL END AS pricePerPyung
+            NULL AS pricePerPyung
         FROM houseinfos hi
         INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
         INNER JOIN (

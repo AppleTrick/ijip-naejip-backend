@@ -244,6 +244,29 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 관심/소유 매물';
 
+-- -----------------------------------------------------
+-- Table `ssafy_home`.`ai_reports`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ssafy_home`.`ai_reports`;
+
+CREATE TABLE IF NOT EXISTS `ssafy_home`.`ai_reports` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '보고서 ID',
+    `user_id` BIGINT NOT NULL COMMENT '사용자 ID',
+    `title` VARCHAR(255) NOT NULL COMMENT '보고서 제목',
+    `query` TEXT NOT NULL COMMENT '사용자 질문',
+    `markdown_content` LONGTEXT NOT NULL COMMENT '마크다운 형태의 분석 결과',
+    `result_count` INT DEFAULT 0 COMMENT '검색 결과 개수',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    PRIMARY KEY (`id`),
+    INDEX `idx_user_id` (`user_id` ASC) VISIBLE,
+    INDEX `idx_created_at` (`created_at` DESC) VISIBLE,
+    CONSTRAINT `fk_ai_reports_user`
+        FOREIGN KEY (`user_id`)
+        REFERENCES `ssafy_home`.`users` (`id`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'AI 분석 보고서 저장';
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
