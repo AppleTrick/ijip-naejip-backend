@@ -76,7 +76,7 @@
             gugun.latitude,
             gugun.longitude,
             CAST(ROUND(gp.avg_price_per_pyung) AS SIGNED) AS pricePerPyung,
-            NULL as avgPrice,
+            CAST(ROUND(sp.avg_price) AS SIGNED) as avgPrice,
             NULL as primaryPyung
         FROM dongcodes gugun
         LEFT JOIN gugun_price gp ON gp.region_code = gugun.dong_code
