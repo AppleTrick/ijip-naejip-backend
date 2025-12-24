@@ -5,8 +5,6 @@ import com.ssafy.home.ai.service.AIService;
 import com.ssafy.home.mapper.ApartmentMapper;
 import com.ssafy.home.mapper.DongCodeMapper;
 import com.ssafy.home.dto.DongCodeResponse;
-import com.ssafy.home.dto.AddressResponse;
-import com.ssafy.home.dto.mapper.ApartmentBasicInfo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -15,7 +13,6 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -35,25 +32,6 @@ public class AIServiceImpl implements AIService {
         this.dongCodeMapper = dongCodeMapper;
     }
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
-
-    
-    /**
-     * 대괄호 짝 찾기
-     */
-    private int findMatchingBracket(String s, int openIdx) {
-        if (openIdx < 0 || openIdx >= s.length() || s.charAt(openIdx) != '[') return -1;
-        int depth = 0;
-        for (int i = openIdx; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '[') depth++;
-            else if (c == ']') {
-                depth--;
-                if (depth == 0) return i;
-            }
-        }
-        return -1;
-    }
 
 
 
@@ -95,166 +73,6 @@ public class AIServiceImpl implements AIService {
         } catch (Exception e) {
             log.error("AI Error: {}", e.getMessage(), e);
             return "분석 중에 문제가 생겼어요. 잠시 후 다시 시도해 주세요. 💦";
-        }
-    }
-
-    @Override
-    public SemanticSearchResponse performSemanticSearch(String query) {
-        log.info("Performing Semantic Search with Tool Calling for query: {}", query);
-
-        String systemMsg = 
-            "당신은 부동산 전문가로서 사용자의 질문에 즉시 답하는 검색 봇입니다.\n" +
-            "\n" +
-            "**[금지 사항 - 매우 중요]**\n" +
-            "- '검색해 보겠습니다', '확인해 보니...', '죄송하지만...' 같은 안내 문구는 절대 하지 마세요.\n" +
-            "- 도구 호출을 위해 사용자에게 질문하거나 허락을 구하지 마세요.\n" +
-            "- 아파트 매물의 점수를 매기거나 순위를 정하지 말고 객관적인 사실 기반으로 추천 이유를 설명하세요.\n" +
-            "\n" +
-            "**[검색 지침]**\n" +
-            "1. **지하철역 기반**: '강남역', '홍대입구역' 등 역 이름이 있으면 무조건 `subwayNearbyFunction`을 사용하세요.\n" +
-            "2. **조건 부합**: 2인 가구용은 15~25평(50~85㎡), 조용한 곳은 주거 단지 비중이 높은 곳을 우선하세요.\n" +
-            "3. **결과 출처**: 반드시 검색 도구가 반환한 결과만 사용하고, 결과가 없으면 솔직하게 없다고 답하세요.\n" +
-            "\n" +
-            "**[출력 형식]**\n" +
-            "🧐 소견: [추천 아파트들의 특징과 선정 이유 (간결하게 한글로)]\n" +
-            "\n" +
-            "JSON_RESULTS: [{\"name\": \"...\", \"address\": \"...\", \"lat\": ..., \"lng\": ...}]";
-
-        try {
-            String aiResponse = chatClient.prompt()
-                    .system(systemMsg)
-                    .user(query)
-                    .functions("localSearchFunction", "kakaoSearchFunction", "subwayNearbyFunction", "priceTrendFunction")
-                    .call()
-                    .content();
-
-            if (aiResponse == null) {
-                return SemanticSearchResponse.builder()
-                        .analysis("AI 파트너가 응답하지 않았어요. 잠시 후 다시 시도해 주세요.")
-                        .results(new ArrayList<>())
-                        .build();
-            }
-
-            log.info("AI Response with tools (raw): {}", aiResponse);
-            
-            List<AddressResponse> resultList = new ArrayList<>();
-            String analysis = aiResponse;
-
-            // JSON_RESULTS 파싱 (다양한 형식 지원)
-            try {
-                // 유니코드 이스케이프 디코딩
-                String decodedResponse = aiResponse;
-                
-                // JSON 배열 찾기: JSON_RESULTS 이후 또는 마지막 [ ] 블록
-                String jsonPart = null;
-                
-                // 패턴 1: JSON_RESULTS: [...]
-                int jsonResultsIdx = decodedResponse.indexOf("JSON_RESULTS");
-                if (jsonResultsIdx != -1) {
-                    int arrayStart = decodedResponse.indexOf("[", jsonResultsIdx);
-                    if (arrayStart != -1) {
-                        int arrayEnd = findMatchingBracket(decodedResponse, arrayStart);
-                        if (arrayEnd != -1) {
-                            jsonPart = decodedResponse.substring(arrayStart, arrayEnd + 1);
-                        }
-                    }
-                }
-                
-                // 패턴 2: 폴백 - 가장 마지막에 있는 [ ] 배열 찾기 (AI가 형식을 어겼을 때 대비)
-                if (jsonPart == null) {
-                    int lastOpen = decodedResponse.lastIndexOf("[");
-                    if (lastOpen != -1) {
-                        int lastClose = decodedResponse.lastIndexOf("]");
-                        if (lastClose > lastOpen) {
-                            jsonPart = decodedResponse.substring(lastOpen, lastClose + 1);
-                        }
-                    }
-                }
-                
-                // 패턴 2: 마지막 JSON 배열 찾기 ([ 로 시작하고 ] 로 끝나는)
-                if (jsonPart == null) {
-                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[\\s*\\{[^\\[]*\\}\\s*\\]", java.util.regex.Pattern.DOTALL);
-                    java.util.regex.Matcher matcher = pattern.matcher(decodedResponse);
-                    String lastMatch = null;
-                    while (matcher.find()) {
-                        lastMatch = matcher.group();
-                    }
-                    jsonPart = lastMatch;
-                }
-                
-                if (jsonPart != null) {
-                    log.info("Found JSON part: {}", jsonPart.length() > 200 ? jsonPart.substring(0, 200) + "..." : jsonPart);
-                    
-                    com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(jsonPart);
-                    if (rootNode.isArray()) {
-                        for (com.fasterxml.jackson.databind.JsonNode node : rootNode) {
-                            if (!node.has("name")) continue;
-                            String name = node.get("name").asText();
-                            String address = node.has("address") ? node.get("address").asText() : "";
-                            double lat = node.has("lat") ? node.get("lat").asDouble() : 0.0;
-                            double lng = node.has("lng") ? node.get("lng").asDouble() : 0.0;
-
-                            // DB 매칭 시도
-                            List<ApartmentBasicInfo> dbResults = apartmentMapper.searchByAptNames(List.of(name));
-                            
-                            if (!dbResults.isEmpty()) {
-                                ApartmentBasicInfo dbInfo = dbResults.get(0);
-                                log.info("Matched with DB: {}", name);
-                                resultList.add(AddressResponse.builder()
-                                        .aptSeq(dbInfo.aptSeq())
-                                        .aptName(dbInfo.aptName())
-                                        .dongName(dbInfo.address())
-                                        .latitude(dbInfo.latitude())
-                                        .longitude(dbInfo.longitude())
-                                        .build());
-                            } else if (lat != 0.0 && lng != 0.0) {
-                                // DB에 없더라도 카카오 정보를 바탕으로 결과 추가 (Fallback)
-                                log.info("No DB match, using fallback: {}", name);
-                                resultList.add(AddressResponse.builder()
-                                        .aptSeq("EXT-" + name.hashCode())
-                                        .aptName(name)
-                                        .dongName(address)
-                                        .latitude(lat)
-                                        .longitude(lng)
-                                        .build());
-                            }
-                        }
-                    }
-
-                    // 결과가 있으면 부정적인 멘트 정제
-                    if (!resultList.isEmpty()) {
-                        if (analysis.startsWith("죄송합니다") || analysis.contains("찾을 수 없습니다")) {
-                            analysis = "🧐 소견: 요청하신 조건에 맞는 아파트들을 찾았습니다. 강남역 일대의 주거 환경과 편의성을 고려한 추천 목록입니다.";
-                        }
-                        // JSON_RESULTS 부분 제거하여 analysis 텍스트만 남김
-                        int jsonStart = analysis.indexOf("JSON_RESULTS");
-                        if (jsonStart != -1) {
-                            analysis = analysis.substring(0, jsonStart).trim();
-                        }
-                    }
-                    log.info("Total results: {} (DB: {}, Fallback: {})", 
-                        resultList.size(), 
-                        resultList.stream().filter(r -> !r.getAptSeq().startsWith("KAKAO-")).count(),
-                        resultList.stream().filter(r -> r.getAptSeq().startsWith("KAKAO-")).count());
-                    }
-                } else {
-                    log.warn("No JSON_RESULTS found in response");
-                }
-            } catch (Exception e) {
-                log.error("JSON_RESULTS parsing failed: {}", e.getMessage());
-            }
-
-            return SemanticSearchResponse.builder()
-                    .results(resultList)
-                    .analysis(analysis)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Semantic Search Tool Error: {}", e.getMessage(), e);
-            return SemanticSearchResponse.builder()
-                    .analysis("분석 중 오류가 발생했습니다: " + e.getMessage())
-                    .results(new ArrayList<>())
-                    .build();
         }
     }
 

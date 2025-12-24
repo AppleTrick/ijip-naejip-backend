@@ -2,7 +2,6 @@ package com.ssafy.home.ai.controller;
 
 import com.ssafy.home.ai.dto.ParseFilterResponse;
 import com.ssafy.home.ai.dto.SemanticSearchRequest;
-import com.ssafy.home.ai.dto.SemanticSearchResponse;
 import com.ssafy.home.ai.service.AIService;
 import com.ssafy.home.dto.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,14 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class AIFeatureController {
 
     private final AIService aiService;
-
-    @Operation(summary = "시맨틱 매물 검색", description = "자연어 질의를 통한 임베딩 기반 매물 검색을 수행합니다")
-    @PostMapping("/search")
-    public ResponseEntity<CommonResponse<SemanticSearchResponse>> semanticSearch(@RequestBody SemanticSearchRequest request) {
-        log.info("시맨틱 검색 요청: {}", request.getQuery());
-        SemanticSearchResponse response = aiService.performSemanticSearch(request.getQuery());
-        return ResponseEntity.ok(CommonResponse.success(response));
-    }
 
     @Operation(summary = "자연어 필터 파싱", description = "자연어 질의로부터 지도 필터 조건을 파싱합니다")
     @PostMapping("/parse-filter")
