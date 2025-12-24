@@ -39,14 +39,6 @@ public class AIFeatureController {
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 
-    @Operation(summary = "전세 사기 안전도 분석", description = "매물 정보를 바탕으로 AI가 전세 사기 위험도를 분석합니다")
-    @PostMapping("/fraud-check")
-    public ResponseEntity<CommonResponse<FraudAnalysisResponse>> fraudCheck(@RequestBody FraudAnalysisRequest request) {
-        log.info("사기 분석 요청: {}", request.getAddress());
-        FraudAnalysisResponse response = aiService.performFraudAnalysis(request);
-        return ResponseEntity.ok(CommonResponse.success(response));
-    }
-
     @Operation(summary = "지역/매물 분석 리포트", description = "특정 매물이나 지역에 대한 AI 상세 분석 리포트를 생성합니다")
     @GetMapping("/analysis")
     public ResponseEntity<CommonResponse<String>> getAnalysis(
@@ -71,11 +63,4 @@ public class AIFeatureController {
         return aiService.analyzeLocationAttractiveness(aptName, address);
     }
 
-    @Operation(summary = "문서(등기부등본) 분석", description = "업로드된 문서를 AI Vision으로 분석하여 보증금, 시세 등을 추출합니다")
-    @PostMapping(value = "/analyze-document", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResponse<com.ssafy.home.ai.dto.DocumentAnalysisResponse>> analyzeDocument(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
-        com.ssafy.home.ai.dto.DocumentAnalysisResponse response = aiService.analyzeDocument(file);
-        return ResponseEntity.ok(CommonResponse.success(response));
-    }
 }
