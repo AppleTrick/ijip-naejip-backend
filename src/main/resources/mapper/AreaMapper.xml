@@ -54,7 +54,8 @@
         WITH gugun_price AS (
             SELECT
                 CONCAT(SUBSTRING(dc.dong_code, 1, 5), '00000') AS region_code,
-                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung
+                SUM(aps.avg_price) / NULLIF(SUM(aps.pyung), 0) AS avg_price_per_pyung,
+                AVG(aps.avg_price) AS avg_price
             FROM apt_pyung_stats aps
             INNER JOIN houseinfos hi ON aps.apt_seq = hi.apt_seq
             INNER JOIN dongcodes dc ON hi.dong_code = dc.dong_code
