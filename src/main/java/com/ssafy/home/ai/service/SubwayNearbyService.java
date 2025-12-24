@@ -59,8 +59,14 @@ public class SubwayNearbyService implements Function<SubwayNearbyRequest, List<A
                 null // maxPyung
             );
             
-            log.info("Found {} apartments near {}", nearbyApartments.size(), request.stationName());
-            return nearbyApartments;
+            // Limit results to 10 items to save tokens
+            List<ApartmentBasicInfo> limitedResults = nearbyApartments.stream()
+                .limit(10)
+                .collect(java.util.stream.Collectors.toList());
+
+            log.info("Found {} apartments near {} (Limited to {})", 
+                nearbyApartments.size(), request.stationName(), limitedResults.size());
+            return limitedResults;
             
         } catch (Exception e) {
             log.error("SubwayNearbyService Error", e);

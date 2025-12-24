@@ -63,7 +63,11 @@ public class KakaoSearchService implements Function<KakaoSearchRequest, KakaoSea
             
             List<KakaoSearchResponse.ApartmentInfo> apartments = new ArrayList<>();
             if (documents != null) {
+                // Limit to 10 items to save tokens
+                int count = 0;
                 for (var doc : documents) {
+                    if (count >= 10) break;
+                    
                     String placeName = (String) doc.get("place_name");
                     String addressName = (String) doc.get("address_name");
                     String roadAddressName = (String) doc.get("road_address_name");
@@ -78,8 +82,10 @@ public class KakaoSearchService implements Function<KakaoSearchRequest, KakaoSea
                         roadAddressName != null && !roadAddressName.isEmpty() ? roadAddressName : addressName, lat, lng);
                     
                     apartments.add(new KakaoSearchResponse.ApartmentInfo(placeName, addressName, description, lat, lng));
+                    count++;
                 }
             }
+            log.info("Returning {} limited results from Kakao", apartments.size());
             return new KakaoSearchResponse(apartments);
         } catch (Exception e) {
             log.error("Kakao Search Error", e);

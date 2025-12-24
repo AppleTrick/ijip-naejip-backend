@@ -31,14 +31,20 @@ public class LocalSearchService implements Function<LocalSearchRequest, List<Apa
                 request.minPyung(),
                 request.maxPyung()
             );
-            log.info("Search Results Count: {}", results.size());
-            if (!results.isEmpty()) {
+            
+            // Limit results to 10 items to save tokens
+            List<ApartmentBasicInfo> limitedResults = results.stream()
+                .limit(10)
+                .collect(java.util.stream.Collectors.toList());
+
+            log.info("Search Results Count: {} (Limited to {})", results.size(), limitedResults.size());
+            if (!limitedResults.isEmpty()) {
                 log.info("Sample Result: {} - {} (가격: {}만원)", 
-                    results.get(0).aptName(), 
-                    results.get(0).address(), 
-                    results.get(0).avgPrice());
+                    limitedResults.get(0).aptName(), 
+                    limitedResults.get(0).address(), 
+                    limitedResults.get(0).avgPrice());
             }
-            return results;
+            return limitedResults;
         } catch (Exception e) {
             log.error("Local DB Search Error", e);
             return List.of();

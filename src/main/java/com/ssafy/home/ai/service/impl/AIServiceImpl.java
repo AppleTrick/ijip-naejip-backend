@@ -17,18 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import javax.imageio.ImageIO;
-import org.springframework.ai.model.Media;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import com.ssafy.home.ai.dto.DocumentAnalysisResponse;
+import java.util.concurrent.atomic.AtomicBoolean;
 import reactor.core.publisher.Flux;
 
 @Slf4j
@@ -131,7 +120,7 @@ public class AIServiceImpl implements AIService {
             "**[출력 형식]**\n" +
             "- 🧐 소견: 검색 결과 요약\n" +
             "- 단지별 분석: 도구에서 가져온 실제 단지 정보\n" +
-            "- [JSON_RESULTS: [{\"name\": \"도구에서받은실제이름\", \"address\": \"도구에서받은실제주소\", \"lat\": 숫자, \"lng\": 숫자}, ...]]";
+            "- JSON_RESULTS: [{\"name\": \"도구에서받은실제이름\", \"address\": \"도구에서받은실제주소\", \"lat\": 숫자, \"lng\": 숫자}, ...}]";
 
         try {
             String aiResponse = chatClient.prompt()
@@ -379,14 +368,24 @@ public class AIServiceImpl implements AIService {
             UserMessage userMessage = new UserMessage(instruction);
             Prompt prompt = new Prompt(List.of(userMessage));
             
+            AtomicBoolean hasEmitted = new AtomicBoolean(false);
+            
             return chatModel.stream(prompt)
                 .map(response -> {
                     if (response.getResult() == null || response.getResult().getOutput() == null) return "";
-                    return response.getResult().getOutput().getContent();
+                    String content = response.getResult().getOutput().getContent();
+                    if (content != null && !content.isEmpty()) {
+                        hasEmitted.set(true);
+                    }
+                    return content;
                 })
                 .filter(content -> content != null && !content.isEmpty())
                 .onErrorResume(e -> {
                     log.error("Streaming Error", e);
+                    // If we have already sent some data, don't append an error message to the successful stream
+                    if (hasEmitted.get()) {
+                        return Flux.empty();
+                    }
                     return Flux.just("분석 정보를 가져오는 중 오류가 발생했습니다.");
                 });
         } catch (Exception e) {
