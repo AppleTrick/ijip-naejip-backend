@@ -39,3 +39,6 @@ out/
 ### 개인 별도 파일 ###
 changhee/
 src/main/resources/application-secret.properties
+
+### 기타 ###
+.DS_Store
