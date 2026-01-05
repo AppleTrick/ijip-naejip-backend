@@ -1,4 +1,4 @@
-# Favorites
+# Favorites API (관심 매물)
 
 ## 관심 아파트 목록 조회
 

@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@Tag(name = "헬스 체크", description = "서버 상태 확인 API")
+@Tag(name = "Health Check API (헬스 체크)", description = "서버 상태 확인 API")
 public class HealthController {
 
     @Operation(summary = "헬스 체크", description = "서버가 정상적으로 작동하고 있는지 확인합니다")

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "아파트 정보 API", description = "부동산 거래 내역 및 아파트 정보 조회 API")
+@Tag(name = "Apartment API (아파트 정보)", description = "부동산 거래 내역 및 아파트 정보 조회 API")
 public class ApartmentController {
 
     private final ApartmentService apartmentService;

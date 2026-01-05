@@ -3,6 +3,7 @@ package com.ssafy.home.controller;
 import com.ssafy.home.dto.*;
 import com.ssafy.home.service.AreaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/area")
 @Slf4j
+@Tag(name = "Area API (지역 검색)", description = "화면(지도) 기반 아파트 및 지역 정보 조회 API")
 public class AreaController {
     private final AreaService areaService;
 

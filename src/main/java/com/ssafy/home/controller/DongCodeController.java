@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/dongcode")
 @RequiredArgsConstructor
-@Tag(name = "지역코드 API", description = "시도, 구군, 동 정보 조회 API")
+@Tag(name = "Region Code API (지역 코드)", description = "시도, 구군, 동 정보 조회 API")
 public class DongCodeController {
     private final DongCodeService dongCodeService;
 

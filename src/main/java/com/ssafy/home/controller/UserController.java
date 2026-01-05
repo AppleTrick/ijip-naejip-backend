@@ -14,7 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-@Tag(name = "User API", description = "사용자 인증 및 회원 관리 API")
+@Tag(name = "User API (회원 관리)", description = "사용자 인증 및 회원 관리 API")
 public class UserController {
 
     private final UserService userService;

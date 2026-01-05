@@ -1,4 +1,4 @@
-# User API
+# User API (회원 관리)
 
 ## 회원정보 수정
 

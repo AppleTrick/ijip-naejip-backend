@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/favorites")
 @RequiredArgsConstructor
-@Tag(name = "Favorites", description = "관심 아파트 API")
+@Tag(name = "Favorites API (관심 매물)", description = "관심 아파트 API")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;

@@ -1,4 +1,4 @@
-# area-controller
+# Area API (지역 검색)
 
 ## 사각형 범위 기반 지역 목록 조회
 
