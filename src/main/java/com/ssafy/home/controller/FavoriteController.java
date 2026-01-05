@@ -32,7 +32,7 @@ public class FavoriteController {
     private final UserMapper userMapper;
 
     @GetMapping
-    @Operation(summary = "관심 아파트 목록 조회")
+    @Operation(summary = "관심 아파트 목록 조회", description = "로그인한 사용자가 등록한 관심 아파트 목록을 조회합니다.")
     public ResponseEntity<CommonResponse<List<FavoriteResponse>>> getFavorites(HttpServletRequest request) {
         Long userId = getUserIdFromToken(request);
         List<FavoriteResponse> favorites = favoriteService.getFavorites(userId);
@@ -40,7 +40,7 @@ public class FavoriteController {
     }
 
     @PostMapping
-    @Operation(summary = "관심 아파트 추가")
+    @Operation(summary = "관심 아파트 추가", description = "새로운 관심 아파트를 등록합니다.")
     public ResponseEntity<CommonResponse<FavoriteResponse>> addFavorite(
             HttpServletRequest request,
             @RequestBody FavoriteAddRequest body
@@ -55,7 +55,7 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "관심 아파트 삭제 (ID)")
+    @Operation(summary = "관심 아파트 삭제 (ID)", description = "관심 아파트 ID(PK)를 이용하여 관심 목록에서 삭제합니다.")
     public ResponseEntity<CommonResponse<Void>> removeFavorite(
             HttpServletRequest request,
             @PathVariable Long id
@@ -66,7 +66,7 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/apt/{aptSeq}")
-    @Operation(summary = "관심 아파트 삭제 (aptSeq)")
+    @Operation(summary = "관심 아파트 삭제 (aptSeq)", description = "아파트 고유번호(aptSeq)를 이용하여 관심 목록에서 삭제합니다.")
     public ResponseEntity<CommonResponse<Void>> removeFavoriteByAptSeq(
             HttpServletRequest request,
             @PathVariable String aptSeq
@@ -78,7 +78,7 @@ public class FavoriteController {
 
 
     @GetMapping("/check")
-    @Operation(summary = "관심 등록 여부 확인")
+    @Operation(summary = "관심 등록 여부 확인", description = "특정 아파트(평수 포함)가 관심 목록에 등록되어 있는지 확인합니다.")
     public ResponseEntity<CommonResponse<Boolean>> checkFavorite(
             HttpServletRequest request,
             @RequestParam String aptSeq,
