@@ -48,6 +48,7 @@ dependencies {
 	// 취약점 해결을 위해 commons-lang3 버전을 명시적으로 오버라이드
 	implementation 'org.apache.commons:commons-lang3:3.18.0'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.27'
 
 	// Spring AI
 	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
