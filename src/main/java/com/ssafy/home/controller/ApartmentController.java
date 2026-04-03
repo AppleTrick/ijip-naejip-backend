@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("")
 @RequiredArgsConstructor
 @Tag(name = "Apartment API (아파트 정보)", description = "부동산 거래 내역 및 아파트 정보 조회 API")
 public class ApartmentController {

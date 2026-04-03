@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/dongcode")
+@RequestMapping("/dongcode")
 @RequiredArgsConstructor
 @Tag(name = "Region Code API (지역 코드)", description = "시도, 구군, 동 정보 조회 API")
 public class DongCodeController {

@@ -118,10 +118,18 @@ sequenceDiagram
 
 ---
 
-## 📄 API Reference
-서버 구동 후 다음 주소에서 상세한 API 명세를 확인할 수 있습니다.
-- **Swagger UI**: `http://localhost:8080/swagger`
-- **상세 문서**: `backend/APIs/` 폴더 내 마크다운 파일 참조
+## 📄 API & Documentation
+서버 구동 후 Swagger를 통해 실시간 API 명세를 확인할 수 있으며, 상세 가이드는 `docs/` 폴더를 참조하세요. 모든 API는 전역 경로 `/api/v1` 하위에서 작동합니다.
+
+### 🔗 실시간 API 문서
+- **Swagger UI**: `http://localhost:8080/api/v1/swagger`
+- **상세 내역 (JSON)**: `http://localhost:8080/api/v1/api-docs`
+
+### 📚 상세 기술 가이드
+주제별 상세 가이드는 아래 링크를 통해 확인할 수 있습니다.
+- **🤖 AI 엔진 설정**: [AI 프롬프트 전략](docs/ai/PROMPTS_GUIDE.md), [보고서 자동 저장 로직](docs/ai/REPORT_FEATURE.md)
+- **🔑 API 공통 규격**: [API 표준 및 노션 연동 가이드](docs/api/NOTION_GUIDE.md)
+- **📝 개별 API 명세 (MD)**: [회원 관리](docs/api/specs/User_API_회원_관리.md), [관심 매물](docs/api/specs/Favorites_API_관심_매물.md), [아파트 정보](docs/api/specs/Apartment_API_아파트_정보.md), [지역 검색](docs/api/specs/Area_API_지역_검색.md), [지역 코드](docs/api/specs/Region_Code_API_지역_코드.md)
 
 ---
 

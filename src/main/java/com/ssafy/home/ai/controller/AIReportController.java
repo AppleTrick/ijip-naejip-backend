@@ -21,7 +21,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/ai/reports")
+@RequestMapping("/ai/reports")
 @RequiredArgsConstructor
 @Tag(name = "AI Reports", description = "AI 분석 보고서 조회 및 관리 API")
 public class AIReportController {

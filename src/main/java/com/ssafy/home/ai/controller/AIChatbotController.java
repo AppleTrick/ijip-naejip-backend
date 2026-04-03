@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/ai")
+@RequestMapping("/ai")
 @RequiredArgsConstructor
 @Tag(name = "AI Chatbot", description = "AI 기반 부동산 분석 챗봇 API")
 public class AIChatbotController {

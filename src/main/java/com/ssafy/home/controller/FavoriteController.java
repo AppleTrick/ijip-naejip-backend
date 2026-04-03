@@ -22,7 +22,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/favorites")
+@RequestMapping("/favorites")
 @RequiredArgsConstructor
 @Tag(name = "Favorites API (관심 매물)", description = "관심 아파트 API")
 public class FavoriteController {

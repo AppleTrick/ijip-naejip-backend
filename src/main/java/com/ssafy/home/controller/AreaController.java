@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/area")
+@RequestMapping("/area")
 @Slf4j
 @Tag(name = "Area API (지역 검색)", description = "화면(지도) 기반 아파트 및 지역 정보 조회 API")
 public class AreaController {

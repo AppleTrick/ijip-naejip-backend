@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/ai")
+@RequestMapping("/ai")
 @RequiredArgsConstructor
 @Tag(name = "AI 기능 API", description = "AI를 활용한 지능형 부동산 서비스 API")
 public class AIFeatureController {
