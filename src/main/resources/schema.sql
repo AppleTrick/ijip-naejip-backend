@@ -7,14 +7,14 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema ssafy_home
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `ssafy_home` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
-USE `ssafy_home` ;
+CREATE SCHEMA IF NOT EXISTS `ijip_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
+USE `ijip_db` ;
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`dongcodes`
+-- Table `ijip_db`.`dongcodes`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`dongcodes` ;
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`dongcodes` (
+DROP TABLE IF EXISTS `ijip_db`.`dongcodes` ;
+CREATE TABLE IF NOT EXISTS `ijip_db`.`dongcodes` (
     `dong_code` VARCHAR(10) NOT NULL COMMENT '법정동코드',
     `sido_name` VARCHAR(30) NULL DEFAULT NULL COMMENT '시도이름',
     `gugun_name` VARCHAR(30) NULL DEFAULT NULL COMMENT '구군이름',
@@ -32,10 +32,10 @@ COMMENT = '법정동코드테이블';
 
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`houseinfos`
+-- Table `ijip_db`.`houseinfos`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`houseinfos` ;
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`houseinfos` (
+DROP TABLE IF EXISTS `ijip_db`.`houseinfos` ;
+CREATE TABLE IF NOT EXISTS `ijip_db`.`houseinfos` (
     `apt_seq` VARCHAR(20) NOT NULL COMMENT '아파트코드(식별자)',
     `sgg_cd` VARCHAR(5) NULL DEFAULT NULL COMMENT '시군구코드',
     `umd_cd` VARCHAR(5) NULL DEFAULT NULL COMMENT '읍면동코드',
@@ -60,10 +60,10 @@ COMMENT = '주택정보테이블';
 
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`housedeals`
+-- Table `ijip_db`.`housedeals`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`housedeals` ;
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`housedeals` (
+DROP TABLE IF EXISTS `ijip_db`.`housedeals` ;
+CREATE TABLE IF NOT EXISTS `ijip_db`.`housedeals` (
     `no` INT NOT NULL AUTO_INCREMENT COMMENT '거래번호',
     `apt_seq` VARCHAR(20) NOT NULL COMMENT '아파트코드',
     `apt_dong` VARCHAR(40) NOT NULL COMMENT '아파트동',
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`housedeals` (
     INDEX `idx_pyung` (`pyung` ASC) VISIBLE,
     CONSTRAINT `apt_seq_to_house_info`
         FOREIGN KEY (`apt_seq`)
-        REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB
@@ -87,11 +87,11 @@ COLLATE = utf8mb4_0900_ai_ci
 COMMENT = '주택거래정보테이블';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`apt_job_history`
+-- Table `ijip_db`.`apt_job_history`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`apt_job_history` ;
+DROP TABLE IF EXISTS `ijip_db`.`apt_job_history` ;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_job_history` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`apt_job_history` (
     `job_id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '작업ID',
     `target_date` VARCHAR(7) NOT NULL COMMENT '적재대상월(YYYYMM)',
     `status` VARCHAR(10) NOT NULL DEFAULT 'RUNNING' COMMENT '상태(SUCCESS/FAIL/RUNNING)',
@@ -108,11 +108,11 @@ COLLATE = utf8mb4_0900_ai_ci
 COMMENT = '아파트실거래가_수집이력';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`apt_dong_stats`
+-- Table `ijip_db`.`apt_dong_stats`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`apt_dong_stats` ;
+DROP TABLE IF EXISTS `ijip_db`.`apt_dong_stats` ;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_dong_stats` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`apt_dong_stats` (
     `apt_seq` VARCHAR(20) NOT NULL COMMENT '아파트코드',
     `apt_dong` VARCHAR(40) NOT NULL COMMENT '아파트동',
     `latitude` DECIMAL(11, 8) NULL DEFAULT NULL COMMENT '대표 위도',
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_dong_stats` (
     PRIMARY KEY (`apt_seq`, `apt_dong`),
     CONSTRAINT `fk_apt_seq_to_houseinfos`
     FOREIGN KEY (`apt_seq`)
-        REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE
         ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -132,10 +132,10 @@ COLLATE = utf8mb4_0900_ai_ci
 COMMENT = '아파트 동별 대표 정보(좌표, 가격)';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`apt_pyung_stats`
+-- Table `ijip_db`.`apt_pyung_stats`
 -- -----------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_pyung_stats` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`apt_pyung_stats` (
     `apt_seq` VARCHAR(20) NOT NULL COMMENT '아파트코드',
     `pyung` INT NOT NULL COMMENT '평수',
     `avg_price` BIGINT NULL COMMENT '평균 거래가',
@@ -145,15 +145,15 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_pyung_stats` (
 
     PRIMARY KEY (`apt_seq`, `pyung`),
     CONSTRAINT `fk_apt_pyung_stats_apt`
-        FOREIGN KEY (`apt_seq`) REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        FOREIGN KEY (`apt_seq`) REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='아파트 평형별 통계';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`apt_dong_pyung_stats`
+-- Table `ijip_db`.`apt_dong_pyung_stats`
 -- -----------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_dong_pyung_stats` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`apt_dong_pyung_stats` (
     `apt_seq` VARCHAR(20) NOT NULL,
     `apt_dong` VARCHAR(40) NOT NULL,
     `pyung` INT NOT NULL,
@@ -164,16 +164,16 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`apt_dong_pyung_stats` (
 
     PRIMARY KEY (`apt_seq`, `apt_dong`, `pyung`),
     CONSTRAINT `fk_apt_dong_pyung_stats_apt`
-        FOREIGN KEY (`apt_seq`) REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        FOREIGN KEY (`apt_seq`) REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='아파트 동/평형별 통계';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`users`
+-- Table `ijip_db`.`users`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`users`;
+DROP TABLE IF EXISTS `ijip_db`.`users`;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`users` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`users` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(100) NOT NULL COMMENT '이메일 (로그인 ID)',
     `password` VARCHAR(255) NULL COMMENT '비밀번호 (OAuth2 가입 시 NULL 가능)',
@@ -196,11 +196,11 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`users` (
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 정보';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`user_notification_settings`
+-- Table `ijip_db`.`user_notification_settings`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`user_notification_settings`;
+DROP TABLE IF EXISTS `ijip_db`.`user_notification_settings`;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_notification_settings` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`user_notification_settings` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `user_id` BIGINT NOT NULL,
     `app_push` TINYINT(1) NOT NULL DEFAULT 1,
@@ -211,17 +211,17 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_notification_settings` (
     INDEX `fk_user_noti_user_idx` (`user_id` ASC) VISIBLE,
     CONSTRAINT `fk_user_noti_user`
         FOREIGN KEY (`user_id`)
-        REFERENCES `ssafy_home`.`users` (`id`)
+        REFERENCES `ijip_db`.`users` (`id`)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 알림 설정';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`user_houses`
+-- Table `ijip_db`.`user_houses`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`user_houses`;
+DROP TABLE IF EXISTS `ijip_db`.`user_houses`;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`user_houses` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `user_id` BIGINT NOT NULL,
     `apt_seq` VARCHAR(20) NOT NULL,
@@ -234,22 +234,22 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`user_houses` (
     INDEX `fk_user_houses_apt_idx` (`apt_seq` ASC) VISIBLE,
     CONSTRAINT `fk_user_houses_user`
         FOREIGN KEY (`user_id`)
-        REFERENCES `ssafy_home`.`users` (`id`)
+        REFERENCES `ijip_db`.`users` (`id`)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT `fk_user_houses_apt`
         FOREIGN KEY (`apt_seq`)
-        REFERENCES `ssafy_home`.`houseinfos` (`apt_seq`)
+        REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '사용자 관심/소유 매물';
 
 -- -----------------------------------------------------
--- Table `ssafy_home`.`ai_reports`
+-- Table `ijip_db`.`ai_reports`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `ssafy_home`.`ai_reports`;
+DROP TABLE IF EXISTS `ijip_db`.`ai_reports`;
 
-CREATE TABLE IF NOT EXISTS `ssafy_home`.`ai_reports` (
+CREATE TABLE IF NOT EXISTS `ijip_db`.`ai_reports` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '보고서 ID',
     `user_id` BIGINT NOT NULL COMMENT '사용자 ID',
     `title` VARCHAR(255) NOT NULL COMMENT '보고서 제목',
@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `ssafy_home`.`ai_reports` (
     INDEX `idx_created_at` (`created_at` DESC) VISIBLE,
     CONSTRAINT `fk_ai_reports_user`
         FOREIGN KEY (`user_id`)
-        REFERENCES `ssafy_home`.`users` (`id`)
+        REFERENCES `ijip_db`.`users` (`id`)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'AI 분석 보고서 저장';
