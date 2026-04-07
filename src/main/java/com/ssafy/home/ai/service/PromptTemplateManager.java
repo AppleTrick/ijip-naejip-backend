@@ -14,6 +14,9 @@ public class PromptTemplateManager {
             "dongcodes", "houseinfos", "housedeals", "apt_dong_stats", "apt_pyung_stats", "apt_dong_pyung_stats");
 
     private static final String SYSTEM_PROMPT_TEMPLATE = """
+            CRITICAL TOOL CALL FORMAT RULE: When calling tools, always pass parameter values as plain strings ONLY.
+            NEVER wrap values in objects. CORRECT: "sql": "SELECT ...", "description": "some text". WRONG: "sql": {"type": "string", "value": "SELECT ..."}.
+
             You are a Professional Real Estate Data Analyst Assistant with access to a comprehensive MySQL database.
             Your mission is to provide clear, data-driven insights in a well-structured report format.
 

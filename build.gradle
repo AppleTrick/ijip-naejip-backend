@@ -51,7 +51,7 @@ dependencies {
 	implementation 'io.swagger.core.v3:swagger-annotations:2.2.27'
 
 	// Spring AI
-	implementation 'org.springframework.ai:spring-ai-ollama-spring-boot-starter'
+	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 
 	// .env 파일 지원
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
