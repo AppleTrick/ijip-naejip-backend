@@ -67,7 +67,7 @@ public class SecurityConfig {
                     "/user/signup", "/user/login", "/user/check-email", "/user/email-verification/**",
                     "/user/reset-password",
                     "/oauth2/**", "/login/oauth2/code/**",
-                    "/area/**", "/dongcode/**", "/apartments/**", "/ai/**", "/favorites/**"
+                    "/area", "/area/**", "/dongcode/**", "/apartments/**", "/ai/**", "/favorites/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
