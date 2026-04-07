@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -25,6 +26,9 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
@@ -55,7 +59,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
             if (user == null) {
                 // 신규 가입 필요: 이메일 입력 페이지로 리다이렉트
-                String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
+                String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth/callback")
                         .queryParam("needsEmail", "true")
                         .queryParam("socialId", oAuth2UserInfo.getId())
                         .queryParam("socialType", registrationId.toUpperCase())
@@ -85,7 +89,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
-        UriComponentsBuilder targetUrlBuilder = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
+        UriComponentsBuilder targetUrlBuilder = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth/callback")
                 .queryParam("accessToken", accessToken);
 
         if (user.getAgeGroup() == null) {
