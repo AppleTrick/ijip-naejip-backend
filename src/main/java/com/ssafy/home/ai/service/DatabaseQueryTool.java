@@ -42,13 +42,13 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
 
     /**
      * SQL 쿼리 실행 결과
+     * NOTE: queryResultRows는 쿼리 결과 행 수이며, 실제 거래건수(deal_count)가 아닙니다.
+     * 실제 거래건수는 반드시 SQL 내 SUM(deal_count) 또는 COUNT(*)로 직접 조회하세요.
      */
     public record QueryResponse(
             boolean success,
             String message,
             List<Map<String, Object>> data,
-            int rowCount,
-            String executedSql,
             String queryType  // "statistics" or "sample_apartments"
     ) {}
 
@@ -67,8 +67,6 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
                     false,
                     "Query rejected: Only SELECT statements on allowed tables are permitted.",
                     Collections.emptyList(),
-                    0,
-                    sql,
                     "unknown"
             );
         }
@@ -89,10 +87,8 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
 
             return new QueryResponse(
                     true,
-                    "Query executed successfully",
+                    "Query executed successfully. 실제 거래건수는 data 내 deal_count 또는 COUNT(*) 컬럼을 사용하세요.",
                     result,
-                    result.size(),
-                    sql,
                     queryType
             );
         } catch (Exception e) {
@@ -101,8 +97,6 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
                     false,
                     "Query execution failed: " + e.getMessage(),
                     Collections.emptyList(),
-                    0,
-                    sql,
                     "unknown"
             );
         }
