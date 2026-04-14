@@ -42,13 +42,13 @@ public class PromptTemplateManager {
             - no (PK): deal ID
             - apt_seq: FK to houseinfos
             - deal_date: YYYYMMDD format int
-            - deal_amount: price in 10,000 KRW (만원, 10,000 KRW units)
+            - deal_amount: price in 만원 (e.g., 190억원 is stored as 1,900,000)
             - pyung: size in pyung (approx 3.3㎡ per pyung)
             - floor: floor number
 
             Table `apt_pyung_stats` (aggregated stats per apartment per size):
             - apt_seq, pyung (PK)
-            - avg_price: average price in 만원
+            - avg_price: average price in 만원 (e.g., 190억원 is stored as 1,900,000)
             - deal_count: number of deals
             - is_representative: 1 if this size is representative for the apartment
             - **CRITICAL**: When selecting apartment data, ALWAYS use `WHERE is_representative = 1` to ensure only ONE representative size per apartment is returned
@@ -61,6 +61,8 @@ public class PromptTemplateManager {
             - Purpose: Get high-level insights with minimal rows (typically 1-20 rows max)
             - Use: GROUP BY, aggregations (AVG, COUNT, SUM, MAX, MIN), ORDER BY, LIMIT
             - **MANDATORY**: ALWAYS include `SUM(s.deal_count) as total_deals` in SELECT to get actual transaction count
+            - **PRICE CONVERSION IN SQL**: ALWAYS divide avg_price and deal_amount by 10000 in SELECT to convert to 억원 directly.
+              This avoids arithmetic errors. Example: `ROUND(s.avg_price / 10000, 2) AS avg_price_억원`
             - Examples:
               * Average prices by region
               * Top 5 most expensive apartments
@@ -68,7 +70,7 @@ public class PromptTemplateManager {
               * Price comparison across different pyung sizes
             - Required pattern for "가장 비싼 아파트" queries:
               ```sql
-              SELECT h.apt_nm, d.dong_name, s.avg_price, SUM(s.deal_count) as total_deals, s.pyung
+              SELECT h.apt_nm, d.dong_name, ROUND(s.avg_price / 10000, 2) AS avg_price_억원, SUM(s.deal_count) as total_deals, s.pyung
               FROM houseinfos h
               JOIN dongcodes d ON h.dong_code = d.dong_code
               JOIN apt_pyung_stats s ON h.apt_seq = s.apt_seq AND s.is_representative = 1
@@ -103,8 +105,9 @@ public class PromptTemplateManager {
             1. **Always call the tool TWICE in parallel** - one for stats, one for sample apartments
             2. **Security**: Only SELECT statements allowed. Tables: %s
             3. **Data Logic**:
-               - `deal_amount` and `avg_price` are in 만원 (10,000 KRW units).
-               - 만원 → 억원 변환: 10,000만원 = 1억원. (예: 47,500만원 = 4.75억원 = 4억 7,500만원)
+               - `deal_amount` and `avg_price` are in 만원 units (e.g., 190억원 = 1,900,000 in the column).
+               - **ALWAYS convert in SQL**: use `ROUND(s.avg_price / 10000, 2) AS avg_price_억원` so the result is already in 억원.
+               - Do NOT convert manually in text — let SQL do the math to avoid errors.
                - 'Recently' = last 365 days or latest available
                - Use `avg_price` from apt_pyung_stats for quick price lookups
                - **MANDATORY**: When querying apt_pyung_stats, ALWAYS add `is_representative = 1` in WHERE or JOIN condition
@@ -168,11 +171,11 @@ public class PromptTemplateManager {
             2. **Use emojis** (📊, 📈, 💡, 🏢, etc.) to make sections visually distinct
             3. **Bold important numbers** and key terms
             4. **Use tables** for comparative data (at least 3 columns)
-            5. **Convert prices** to 억원 for readability:
-               - 10,000만원 = 1억원
-               - 47,500만원 = 4억 7,500만원 (4.75억)
-               - 341,800만원 = 34억 1,800만원 (34.18억)
+            5. **Display prices** in 억원:
+               - SQL 쿼리에서 이미 `/ 10000`으로 변환했으므로, 쿼리 결과값이 곧 억원 단위입니다.
+               - 예: avg_price_억원 = 190.0 → "190억원" 으로 표시
                - 표시 형식: "X억 Y,000만원" 또는 "X.XX억원"
+               - **절대로 텍스트에서 다시 나누거나 곱하지 마세요. SQL 결과값을 그대로 사용하세요.**
             6. **Include specific percentages** and trends when comparing data
             7. **Use bullet points** for lists and key points
             8. **Add context**: Don't just show numbers, explain what they mean
