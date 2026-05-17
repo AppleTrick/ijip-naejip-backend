@@ -9,7 +9,7 @@ pipeline {
                         cd /home/ubuntu/project/apps/ijip-naejip/ijip-naejip-backend
                         git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/AppleTrick/ijip-naejip-backend.git
                         git pull origin main
-                        git remote set-url origin https://github.com/AppleTrick/ijip-naejip-backend.git
+                        git remote set-url origin git@github.com:AppleTrick/ijip-naejip-backend.git
                     '''
                 }
             }
