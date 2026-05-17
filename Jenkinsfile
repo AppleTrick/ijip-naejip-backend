@@ -4,7 +4,14 @@ pipeline {
     stages {
         stage('Pull') {
             steps {
-                sh 'cd /home/ubuntu/project/apps/ijip-naejip/ijip-naejip-backend && git pull origin main'
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                    sh '''
+                        cd /home/ubuntu/project/apps/ijip-naejip/ijip-naejip-backend
+                        git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/AppleTrick/ijip-naejip-backend.git
+                        git pull origin main
+                        git remote set-url origin https://github.com/AppleTrick/ijip-naejip-backend.git
+                    '''
+                }
             }
         }
         stage('Deploy') {
