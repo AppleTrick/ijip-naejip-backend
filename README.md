@@ -1,4 +1,4 @@
-# 🏡 ijip-naejip (이제집) - Backend 🖥️
+# 🏡 ijip-naejip (이집내집) - Backend 🖥️
 
 본 저장소는 사용자의 라이프스타일에 맞춘 부동산 매물 추천 및 AI 분석 서비스를 제공하는 **ijip-naejip** 프로젝트의 백엔드 소스코드입니다.
 
