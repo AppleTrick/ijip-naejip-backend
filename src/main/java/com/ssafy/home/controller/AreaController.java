@@ -6,11 +6,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.concurrent.TimeUnit;
 
 import java.util.List;
 
@@ -48,6 +51,8 @@ public class AreaController {
         PriceRangeParam priceRangeParam = isSearchForApt ? new PriceRangeParam(minPrice, maxPrice) : null;
         PyungRangeParam pyungRangeParam = isSearchForApt ? new PyungRangeParam(minPyung, maxPyung) : null;
         List<AddressResponse> areas = areaService.searchAreaAddress(geoBoundParam, scope, priceRangeParam, pyungRangeParam);
-        return ResponseEntity.ok(CommonResponse.success(areas));
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS).cachePublic())
+                .body(CommonResponse.success(areas));
     }
 }
