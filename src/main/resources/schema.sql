@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS `ijip_db`.`houseinfos` (
     `avg_price` INT NULL DEFAULT NULL COMMENT '대표가격(지난달+이번달 평균)',
     `update_at` DATETIME NULL DEFAULT NULL COMMENT '공공데이터 갱신 작업 시간',
     PRIMARY KEY (`apt_seq`),
-    INDEX `idx_dong_code` (`dong_code` ASC) VISIBLE)
+    INDEX `idx_dong_code` (`dong_code` ASC) VISIBLE,
+    INDEX `idx_coordinates` (`latitude` ASC, `longitude` ASC) VISIBLE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci
@@ -75,6 +76,8 @@ CREATE TABLE IF NOT EXISTS `ijip_db`.`housedeals` (
     PRIMARY KEY (`no`),
     INDEX `apt_seq_to_house_info_idx` (`apt_seq` ASC) VISIBLE,
     INDEX `idx_pyung` (`pyung` ASC) VISIBLE,
+    INDEX `idx_apt_seq_deal_date` (`apt_seq` ASC, `deal_date` ASC) VISIBLE,
+    INDEX `idx_apt_seq_pyung_deal_date` (`apt_seq` ASC, `pyung` ASC, `deal_date` ASC) VISIBLE,
     CONSTRAINT `apt_seq_to_house_info`
         FOREIGN KEY (`apt_seq`)
         REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
@@ -121,6 +124,7 @@ CREATE TABLE IF NOT EXISTS `ijip_db`.`apt_dong_stats` (
     `update_at` DATETIME NULL DEFAULT NULL COMMENT '공공데이터 갱신 작업 시간',
     `geo_status` VARCHAR(10) DEFAULT 'READY' COMMENT '지오코딩상태(READY, DONE, FAIL)',
     PRIMARY KEY (`apt_seq`, `apt_dong`),
+    INDEX `idx_coordinates` (`latitude` ASC, `longitude` ASC) VISIBLE,
     CONSTRAINT `fk_apt_seq_to_houseinfos`
     FOREIGN KEY (`apt_seq`)
         REFERENCES `ijip_db`.`houseinfos` (`apt_seq`)
