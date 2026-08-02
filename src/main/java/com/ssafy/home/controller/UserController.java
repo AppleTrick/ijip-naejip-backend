@@ -19,6 +19,7 @@ public class UserController {
 
     private final UserService userService;
     private final com.ssafy.home.util.JwtTokenProvider jwtTokenProvider;
+    private final com.ssafy.home.util.RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @PostMapping("/signup")
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
@@ -46,14 +47,7 @@ public class UserController {
             String name = result.get("name");
 
             // Refresh Token을 HttpOnly 쿠키로 설정
-            org.springframework.http.ResponseCookie cookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
-                    .path("/")
-                    .sameSite("Strict")
-                    .httpOnly(true)
-                    .secure(false) // 로컬 개발 환경에서는 false, 배포 시 true 권장
-                    .maxAge(60 * 60 * 24 * 7) // 7일
-                    .build();
-            response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+            response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.create(refreshToken).toString());
 
             return ResponseEntity.ok(Map.of("accessToken", accessToken, "name", name));
         } catch (Exception e) {
@@ -82,9 +76,10 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃", description = "사용자를 로그아웃 처리합니다. 클라이언트 측에서 Access Token을 삭제해야 합니다.")
-    public ResponseEntity<?> logout() {
-        // JWT 방식은 서버 세션이 없으므로 클라이언트에게 성공 응답만 보냄
+    @Operation(summary = "로그아웃", description = "refreshToken 쿠키를 만료시키고, 클라이언트 측에서는 accessToken을 삭제해야 합니다.")
+    public ResponseEntity<?> logout(jakarta.servlet.http.HttpServletResponse response) {
+        // refreshToken은 HttpOnly라 클라이언트 JS가 지울 수 없으므로 서버가 직접 만료시켜야 함
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.clear().toString());
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
