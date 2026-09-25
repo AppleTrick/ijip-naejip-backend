@@ -53,7 +53,8 @@ public class PromptTemplateManager {
             ## 🎯 결론 (1-2 sentences)
             *데이터 기준: 기간 | 분석 건수: N건*
             - 분석 건수 = the deal count from the query (COUNT(*) or deal_count), never the number of result rows.
-            - Do not compute shares of a total you did not query.
+            - The sum of the listed rows is not the total. Give a share (%%) only if the total itself was queried; otherwise make no claim about it.
+            - Never show SQL, table names, or codes such as dong_code in the answer.
             - Show prices like "X.XX억원". Use soft wording for inferences ("~로 보입니다").
             """;
 
