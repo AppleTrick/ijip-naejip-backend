@@ -81,24 +81,5 @@ public interface ApartmentMapper {
         @Param("pyung") Integer pyung,
         @Param("beforeMonth") String beforeMonth
     );
-
-    /**
-     * 키워드 기반 아파트 검색
-     * @param keywords 검색 키워드 리스트
-     * @return 아파트 기본 정보 리스트
-     */
-    List<ApartmentBasicInfo> searchApartmentsByKeywords(
-        @Param("keywords") List<String> keywords,
-        @Param("minPrice") Integer minPrice,
-        @Param("maxPrice") Integer maxPrice,
-        @Param("minPyung") Integer minPyung,
-        @Param("maxPyung") Integer maxPyung
-    );
-    /**
-     * 아파트 이름 기반 아파트 검색
-     * @param aptNames 아파트 이름 리스트
-     * @return 아파트 기본 정보 리스트
-     */
-    List<ApartmentBasicInfo> searchByAptNames(@Param("aptNames") List<String> aptNames);
 }
 
