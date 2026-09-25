@@ -1,25 +1,23 @@
 # 이집내집 (ijip-naejip) — Backend
 
-실거래가 327만 건 위에서 AI 채팅·지도 검색·분석 리포트를 제공하는 부동산 서비스의 백엔드입니다.
+실거래가 약 395만 건 위에서 AI 채팅·지도 검색·분석 리포트를 제공하는 부동산 서비스의 백엔드입니다.
 
 - **환경**: Java 17 · Spring Boot 3.5.8
 - **전체 서비스 문서**: 상위 [../README.md](../README.md) · [아키텍처](../docs/ARCHITECTURE.md) · [기술 회고록](../docs/TECHNICAL_REPORT.md)
 
 ## 이 백엔드의 두 가지 핵심
 
-### 1. AI가 스스로 DB를 조회하는 Tool Calling 구조
+### 1. AI가 SQL을 쓰고 도구 하나로 실행하는 Tool Calling 구조
 
-"마포구 30평대 5억 이하 거래 있어?"처럼 물으면, AI가 직접 DB 조회 도구를 선택·실행해 집계 결과를 자연어로 답합니다. 벡터 검색(RAG)으로는 "평균가", "최고가" 같은 집계 질문에 답할 수 없어 Tool Calling을 택했습니다.
+"마포구 30평대 5억 이하 거래 있어?"처럼 물으면, AI가 SQL SELECT 문을 작성하고 DB 조회 도구(`executeDatabaseQuery`)로 실행해 집계 결과를 자연어로 답합니다. 벡터 검색(RAG)으로는 "평균가", "최고가" 같은 집계 질문에 답할 수 없어 이 구조를 택했습니다. 대신 실행 창구를 도구 1개로 좁히고 SELECT만 허용합니다.
 
 ```
 사용자 질문
   ▼
 [전처리] RegionValidator — 지역명("마포")을 dongcodes 테이블과 대조해 법정동 코드 확정
   ▼
-Spring AI ChatClient (Groq) — 도구 목록 제시 후 AI가 자율 호출
-  ├─ executeDatabaseQuery : SELECT 쿼리 실행 (SqlQueryValidator 검증)
-  ├─ 가격 동향 도구
-  └─ 지도/지하철 검색 도구
+Spring AI ChatClient (Groq) — 도구 1개 등록, AI가 SQL을 작성해 호출
+  └─ executeDatabaseQuery : SqlQueryValidator(SELECT만) 통과 후 실행
   ▼
 수집 데이터로 자연어 응답 생성 (해요체 페르소나)
   ▼
@@ -51,7 +49,7 @@ Oracle Cloud 이전 직후 상세 조회가 최대 90초까지 걸렸습니다. 
 | Auth | Spring Security · JWT (Stateless) · Kakao/Google OAuth2 · Gmail SMTP |
 | Docs | Swagger (OpenAPI 3.0) · spring-dotenv |
 
-> **LLM 제공자 이력**: OpenAI GPT-4o → 자체 Ollama(gemma3) → Groq로 3회 교체됐고, 모두 `spring.ai.openai.*` 설정 변경만으로 처리됐습니다. 배경은 [트러블슈팅 #8](../docs/TROUBLESHOOTING.md#8).
+> **LLM 제공자 이력**: OpenAI(SSAFY 무료 토큰, gpt-4.1 계열) → 로컬 Ollama(gemma3, 당일 포기) → Groq(llama-4-scout → `openai/gpt-oss-120b`). 어느 교체에서도 Java 코드는 바꾸지 않았고, 의존성과 설정만 바꿨습니다. 배경은 [트러블슈팅 #8](../docs/TROUBLESHOOTING.md#8).
 
 ## 핵심 기능
 
@@ -90,7 +88,7 @@ graph LR
 ```
 com.ssafy.home
 ├── ai/            # AI 도메인 — Tool Calling, 지역 검증, SQL 검증, 프롬프트 관리
-├── controller/    # REST 컨트롤러 (11개, 30+ 엔드포인트)
+├── controller/    # REST 컨트롤러 (9개, 약 30개 엔드포인트)
 ├── service/       # 비즈니스 로직 (3-layer + 인터페이스)
 ├── mapper/        # MyBatis 매퍼 인터페이스 + XML
 ├── dto/           # 데이터 전송 객체 (record)
