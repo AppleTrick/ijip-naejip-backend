@@ -118,32 +118,20 @@ public class RegionValidator {
             return "";
         }
 
-        StringBuilder context = new StringBuilder("\n\n### 🗺️ Verified Region Information (CRITICAL - Use These Exact Names!)\n\n");
-        context.append("The user mentioned the following regions. These have been verified in the database.\n");
-        context.append("**IMPORTANT**: Use these EXACT region names in your SQL queries to avoid errors:\n\n");
-
-        for (int i = 0; i < regions.size(); i++) {
-            RegionInfo region = regions.get(i);
-            context.append(String.format("%d. **%s**\n", i + 1, region.getFullAddress()));
-            context.append(String.format("   - dong_code: `%s`\n", region.getDongCode()));
-
+        StringBuilder context = new StringBuilder("\n## Verified regions (use these exact names/codes in SQL)\n");
+        for (RegionInfo region : regions) {
+            context.append(String.format("- %s: dong_code=%s", region.getFullAddress(), region.getDongCode()));
             if (region.getSidoName() != null) {
-                context.append(String.format("   - sido_name: `%s`\n", region.getSidoName()));
+                context.append(", sido_name=").append(region.getSidoName());
             }
             if (region.getGugunName() != null) {
-                context.append(String.format("   - gugun_name: `%s`\n", region.getGugunName()));
+                context.append(", gugun_name=").append(region.getGugunName());
             }
             if (region.getDongName() != null) {
-                context.append(String.format("   - dong_name: `%s`\n", region.getDongName()));
+                context.append(", dong_name=").append(region.getDongName());
             }
             context.append("\n");
         }
-
-        context.append("**Query Rules for These Regions:**\n");
-        context.append("- Use the exact column names (sido_name, gugun_name, dong_name) shown above\n");
-        context.append("- Use dong_code for joins with houseinfos table\n");
-        context.append("- For Sido filtering without physical sido_code: Use `SUBSTR(dong_code, 1, 2)` to match the first 2 digits\n");
-        context.append("- For Gugun filtering without physical gugun_code: Use `SUBSTR(dong_code, 1, 5)` to match the first 5 digits\n");
 
         return context.toString();
     }

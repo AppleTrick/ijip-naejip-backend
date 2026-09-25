@@ -22,6 +22,8 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryRequest, DatabaseQueryTool.QueryResponse> {
 
+    private static final int MAX_ROWS_TO_MODEL = 20;
+
     private final AIQueryJdbc aiQueryJdbc;
     private final SqlQueryValidator sqlQueryValidator;
     private final QueryResultCollector queryResultCollector;
@@ -87,10 +89,14 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
                 queryResultCollector.collectSampleApartments(result);
             }
 
+            // LLM에 되돌려 보내는 행은 토큰 절약을 위해 제한한다 (지도용 샘플 수집은 위에서 전체 결과로 처리)
+            boolean truncated = result.size() > MAX_ROWS_TO_MODEL;
+            List<Map<String, Object>> rowsForModel = truncated ? result.subList(0, MAX_ROWS_TO_MODEL) : result;
             return new QueryResponse(
                     true,
-                    "Query executed successfully. 실제 거래건수는 data 내 deal_count 또는 COUNT(*) 컬럼을 사용하세요.",
-                    result,
+                    (truncated ? "Showing first " + MAX_ROWS_TO_MODEL + " of " + result.size() + " rows. " : "")
+                            + "실제 거래건수는 data 내 deal_count 또는 COUNT(*) 컬럼을 사용하세요.",
+                    rowsForModel,
                     queryType
             );
         } catch (Exception e) {

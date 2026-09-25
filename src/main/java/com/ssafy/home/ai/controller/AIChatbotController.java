@@ -1,5 +1,6 @@
 package com.ssafy.home.ai.controller;
 
+import com.ssafy.home.ai.exception.AIUnavailableException;
 import com.ssafy.home.ai.dto.AIChatRequest;
 import com.ssafy.home.ai.dto.SemanticSearchResponse;
 import com.ssafy.home.ai.service.AIChatbotService;
@@ -49,8 +50,18 @@ public class AIChatbotController {
                     .body(CommonResponse.fail("401", "로그인이 필요합니다."));
         }
 
-        // AI 분석 수행
-        SemanticSearchResponse response = aiChatbotService.generateResponse(chatRequest.getMessage());
+        // AI 분석 수행 — 실패하면 리포트를 저장하지 않고 오류를 돌려준다
+        SemanticSearchResponse response;
+        try {
+            response = aiChatbotService.generateResponse(chatRequest.getMessage());
+        } catch (AIUnavailableException e) {
+            if (e.isRateLimited()) {
+                return ResponseEntity.status(429)
+                        .body(CommonResponse.fail("429", "AI 사용량이 많아 잠시 후 다시 시도해 주세요. (약 1분)"));
+            }
+            return ResponseEntity.status(503)
+                    .body(CommonResponse.fail("503", "AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."));
+        }
 
         // 보고서 자동 저장
         try {

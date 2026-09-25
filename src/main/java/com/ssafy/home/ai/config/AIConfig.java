@@ -23,7 +23,11 @@ public class AIConfig {
                     long start = System.currentTimeMillis();
                     var response = execution.execute(request, body);
 
-                    log.info("<<< [AI RESPONSE STATUS] {} ({}ms)", response.getStatusCode(), System.currentTimeMillis() - start);
+                    // Groq가 돌려주는 분당 토큰 잔량 — 요청당 토큰 사용량 추적용
+                    log.info("<<< [AI RESPONSE STATUS] {} ({}ms, TPM remaining {}/{})", response.getStatusCode(),
+                            System.currentTimeMillis() - start,
+                            response.getHeaders().getFirst("x-ratelimit-remaining-tokens"),
+                            response.getHeaders().getFirst("x-ratelimit-limit-tokens"));
                     return response;
                 });
     }

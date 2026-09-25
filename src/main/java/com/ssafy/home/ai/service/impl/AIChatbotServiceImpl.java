@@ -2,6 +2,7 @@ package com.ssafy.home.ai.service.impl;
 
 import com.ssafy.home.ai.dto.RegionInfo;
 import com.ssafy.home.ai.dto.SemanticSearchResponse;
+import com.ssafy.home.ai.exception.AIUnavailableException;
 import com.ssafy.home.ai.service.AIChatbotService;
 import com.ssafy.home.ai.service.DatabaseQueryTool;
 import com.ssafy.home.ai.service.PromptTemplateManager;
@@ -11,6 +12,8 @@ import com.ssafy.home.dto.AddressResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +31,10 @@ public class AIChatbotServiceImpl implements AIChatbotService {
     private final PromptTemplateManager promptTemplateManager;
     private final QueryResultCollector queryResultCollector;
     private final RegionValidator regionValidator;
+
+    /** 기본 모델이 분당 토큰 한도에 걸리면 재시도할 모델 (Groq 한도는 모델별로 따로 적용된다) */
+    @Value("${ai.chat.fallback-model:openai/gpt-oss-20b}")
+    private String fallbackModel;
 
     /**
      * 사용자 메시지에 대한 응답 생성
@@ -58,18 +65,19 @@ public class AIChatbotServiceImpl implements AIChatbotService {
                 log.info("No regions detected in user message");
             }
 
-            // ChatClient 생성 및 Function 등록
-            ChatClient chatClient = chatClientBuilder.build();
-
             log.info("Processing query with Tool Calling: {}", userMessage);
 
-            // AI에게 질문을 전달하고 Tool을 사용하여 응답 생성
-            String response = chatClient.prompt()
-                    .system(systemPrompt)
-                    .user(userMessage)
-                    .functions("executeDatabaseQuery")  // Function 이름으로 등록
-                    .call()
-                    .content();
+            String response;
+            try {
+                response = ask(systemPrompt, userMessage, null);
+            } catch (RuntimeException e) {
+                if (!isRateLimited(e)) {
+                    throw e;
+                }
+                log.warn("기본 모델 한도 초과 — {}로 재시도", fallbackModel);
+                queryResultCollector.clear();
+                response = ask(systemPrompt, userMessage, fallbackModel);
+            }
 
             log.info("AI Response generated successfully");
 
@@ -85,13 +93,31 @@ public class AIChatbotServiceImpl implements AIChatbotService {
 
         } catch (Exception e) {
             log.error("Error processing chat request", e);
-            return SemanticSearchResponse.builder()
-                    .analysis("죄송합니다. 요청을 처리하는 중 오류가 발생했습니다: " + e.getMessage())
-                    .results(List.of())
-                    .build();
+            throw new AIUnavailableException("AI 응답 생성 실패", isRateLimited(e), e);
         } finally {
             // 반드시 정리
             queryResultCollector.clear();
         }
+    }
+
+    private String ask(String systemPrompt, String userMessage, String model) {
+        ChatClient.ChatClientRequestSpec request = chatClientBuilder.build().prompt()
+                .system(systemPrompt)
+                .user(userMessage)
+                .functions("executeDatabaseQuery");
+        if (model != null) {
+            request = request.options(OpenAiChatOptions.builder().model(model).build());
+        }
+        return request.call().content();
+    }
+
+    private boolean isRateLimited(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            String message = t.getMessage();
+            if (message != null && (message.contains("429") || message.contains("rate_limit_exceeded"))) {
+                return true;
+            }
+        }
+        return false;
     }
 }
