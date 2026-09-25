@@ -24,14 +24,14 @@ class ApartmentScorerTest {
 
         // 마포역 60m → 8점 + 1km 안 역 2곳 → 1점
         assertThat(s.transportation()).isEqualTo(9.0);
-        // 염리초 307m → 4.95점 + 초·중·고 1곳 → 1점
-        assertThat(s.education()).isEqualTo(6.0);
-        // 대형마트 4곳 → 4점 + 380m → 2.66점 + 병원 173곳 → 3점
-        assertThat(s.convenience()).isEqualTo(9.7);
-        // 삼개어린이공원 77m → 6점 + 공원 1곳 → 1점
-        assertThat(s.park()).isEqualTo(7.0);
-        // 평당 4,958 → 5,075만원 (+2.4%) → 5 + 1.2
-        assertThat(s.priceTrend()).isEqualTo(6.2);
+        // 염리초 307m → 4.95점 + 초·중·고 1곳 → 0.33점
+        assertThat(s.education()).isEqualTo(5.3);
+        // 대형마트 4곳 → 3.2점 + 380m → 2.66점 + 병원 173곳 → 2.6점
+        assertThat(s.convenience()).isEqualTo(8.5);
+        // 삼개어린이공원 77m → 6점 + 공원 1곳 → 0.4점
+        assertThat(s.park()).isEqualTo(6.4);
+        // 평당 4,958 → 5,075만원 (+2.4%) → 5 + 0.39
+        assertThat(s.priceTrend()).isEqualTo(5.4);
         assertThat(s.evidence().get("transportation")).isEqualTo("마포역 60m, 1km 안 역 2곳");
         assertThat(s.evidence().get("priceTrend")).contains("+2.4%");
     }
