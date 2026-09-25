@@ -16,13 +16,14 @@ public class AIConfig {
                     // Cloudflare 등을 우회하기 위해 일반적인 브라우저 User-Agent 추가
                     request.getHeaders().set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
-                    log.info(">>> [AI REQUEST] {} {}", request.getMethod(), request.getURI());
-                    log.info(">>> [AI HEADERS] {}", request.getHeaders());
-                    log.info(">>> [AI BODY] {}", new String(body, java.nio.charset.StandardCharsets.UTF_8));
+                    // 헤더는 Authorization(API 키)을 포함하므로 로그에 남기지 않는다
+                    log.info(">>> [AI REQUEST] {} {} ({} bytes)", request.getMethod(), request.getURI(), body.length);
+                    log.debug(">>> [AI BODY] {}", new String(body, java.nio.charset.StandardCharsets.UTF_8));
 
+                    long start = System.currentTimeMillis();
                     var response = execution.execute(request, body);
 
-                    log.info("<<< [AI RESPONSE STATUS] {}", response.getStatusCode());
+                    log.info("<<< [AI RESPONSE STATUS] {} ({}ms)", response.getStatusCode(), System.currentTimeMillis() - start);
                     return response;
                 });
     }
