@@ -3,9 +3,9 @@ package com.ssafy.home.ai.service;
 import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.ssafy.home.ai.config.AIQueryJdbc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -22,7 +22,7 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryRequest, DatabaseQueryTool.QueryResponse> {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final AIQueryJdbc aiQueryJdbc;
     private final SqlQueryValidator sqlQueryValidator;
     private final QueryResultCollector queryResultCollector;
 
@@ -61,11 +61,13 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
         log.info("Tool Called - SQL: {}", sql);
 
         // 보안 검증
-        if (!sqlQueryValidator.isSafeQuery(sql)) {
-            log.warn("Unsafe query rejected: {}", sql);
+        String rejectReason = sqlQueryValidator.rejectReason(sql);
+        if (rejectReason != null) {
+            log.warn("Unsafe query rejected ({}): {}", rejectReason, sql);
             return new QueryResponse(
                     false,
-                    "Query rejected: Only SELECT statements on allowed tables are permitted.",
+                    "Query rejected (" + rejectReason + "). Only a single SELECT on allowed tables is permitted: "
+                            + SqlQueryValidator.ALLOWED_TABLES,
                     Collections.emptyList(),
                     "unknown"
             );
@@ -73,7 +75,7 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
 
         try {
             // 쿼리 실행
-            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql);
+            List<Map<String, Object>> result = aiQueryJdbc.jdbcTemplate().queryForList(sql);
             log.info("Query executed successfully. Rows: {}", result.size());
 
             // 쿼리 타입 자동 감지
