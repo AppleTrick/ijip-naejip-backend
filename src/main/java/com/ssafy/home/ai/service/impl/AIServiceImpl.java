@@ -9,6 +9,7 @@ import com.ssafy.home.dto.DongCodeResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
@@ -43,8 +44,7 @@ public class AIServiceImpl implements AIService {
         String trimmedPrompt = promptText != null ? promptText.trim() : "";
         String trimmedInstruction = specializedInstruction != null ? specializedInstruction.trim() : "";
 
-        // [Global System Prompt]
-        // AI의 방어기제를 해제하고, 인간적인 전문가 페르소나를 주입하는 핵심 부분입니다.
+        // [Global System Prompt] 기능별 지시문 + 모든 AI 기능에 공통인 전문가 페르소나·말투 규칙
         String globalSystemPrompt = String.format(
             "%s\n\n" +
             "🛑 **[필수 준수 사항 - 어길 시 시스템 오류]** 🛑\n" +
@@ -59,11 +59,9 @@ public class AIServiceImpl implements AIService {
         log.info("AI Request - Prompt: [{}]", trimmedPrompt);
 
         try {
-            // System Role을 명확히 분리하여 전달 (UserMessage 내부에 포함하는 방식 유지하되 명확히 구분)
-            String combinedPrompt = String.format("---[지시사항]---\n%s \n---[사용자 입력]---\n%s", globalSystemPrompt, trimmedPrompt);
-            UserMessage userMessage = new UserMessage(combinedPrompt);
-            
-            Prompt prompt = new Prompt(List.of(userMessage));
+            // 지시문은 SystemMessage, 사용자 입력·데이터는 UserMessage로 분리한다.
+            // 한 메시지에 이어 붙이면 사용자 입력("위 지시를 무시하고…")이 지시문과 같은 권한으로 읽힌다.
+            Prompt prompt = new Prompt(List.of(new SystemMessage(globalSystemPrompt), new UserMessage(trimmedPrompt)));
             var response = chatModel.call(prompt);
             
             if (response == null || response.getResult() == null) {
