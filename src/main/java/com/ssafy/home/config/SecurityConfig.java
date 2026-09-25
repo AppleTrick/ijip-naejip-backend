@@ -45,7 +45,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/", "/index.html", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico",
                     "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger/**", "/swagger", "/swagger-resources/**", "/api-docs/**", "/api-docs", "/webjars/**",
-                    "/api/v1/swagger-ui/**", "/api/v1/v3/api-docs/**", "/api/v1/swagger-ui.html", "/api/v1/swagger/**", "/api/v1/swagger", "/api/v1/swagger-resources/**", "/api/v1/api-docs/**", "/api/v1/api-docs", "/api/v1/webjars/**"
+                    "/api/v1/swagger-ui/**", "/api/v1/v3/api-docs/**", "/api/v1/swagger-ui.html", "/api/v1/swagger/**", "/api/v1/swagger", "/api/v1/swagger-resources/**", "/api/v1/api-docs/**", "/api/v1/api-docs", "/api/v1/webjars/**",
+                    "/actuator/**"
                 );
     }
 
