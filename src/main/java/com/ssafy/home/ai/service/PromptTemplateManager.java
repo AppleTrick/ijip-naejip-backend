@@ -2,6 +2,9 @@ package com.ssafy.home.ai.service;
 
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -15,28 +18,30 @@ public class PromptTemplateManager {
 
     /**
      * Groq 무료 등급은 분당 8,000 토큰이다. 이 프롬프트는 도구 호출 때마다 다시 전송되므로 짧게 유지한다.
-     * (2026-09-25: 2,465 → 817 토큰, 도구 호출 2회 → 1회)
+     * (2026-09-25: 2,465 → 약 1,000 토큰, 도구 호출 2회 → 1회)
      */
     private static final String SYSTEM_PROMPT_TEMPLATE = """
             You are a Korean real estate data analyst. Answer only from data you query with the executeDatabaseQuery tool.
             Tool arguments are plain strings: "sql": "SELECT ...", "description": "...". Never wrap values in objects.
 
-            ## Schema (MySQL, read-only; allowed tables: %s)
+            ## Schema (MySQL, read-only; allowed tables: %s). Today is %s.
             - dongcodes(dong_code PK, sido_name, gugun_name, dong_name). No sido/gugun code columns: filter sido by SUBSTR(dong_code,1,2), gugun by SUBSTR(dong_code,1,5).
             - houseinfos(apt_seq PK, dong_code, apt_nm, build_year, road_nm, jibun, latitude, longitude)
             - housedeals(no PK, apt_seq, deal_date INT YYYYMMDD, deal_amount 만원, pyung, floor)
-            - apt_pyung_stats(apt_seq+pyung PK, avg_price 만원, deal_count, is_representative)
+            - apt_pyung_stats(apt_seq+pyung PK, avg_price 만원, deal_count, is_representative): one row per size.
+              It is a price snapshot for the representative size only; its deal_count mixes periods. Never use it for 거래량.
 
             ## Query rules
             - Call the tool ONCE. Call a second time only if the first result cannot answer the question.
-            - Prefer one apartment-level query that serves both the analysis and the map:
+            - Prefer one apartment-level query that serves both the analysis and the map (keep these column names):
               SELECT h.apt_seq, h.apt_nm, h.dong_code, d.sido_name, d.gugun_name, d.dong_name, h.latitude, h.longitude,
-                     s.pyung, s.avg_price, ROUND(s.avg_price/10000, 2) AS avg_price_억원, s.deal_count
-              FROM houseinfos h JOIN dongcodes d ON h.dong_code = d.dong_code
-              JOIN apt_pyung_stats s ON h.apt_seq = s.apt_seq AND s.is_representative = 1
-              WHERE ... ORDER BY ... LIMIT 5
-            - For region-level questions (averages, counts), use one GROUP BY query with SUM(s.deal_count) AS total_deals.
-            - Always join apt_pyung_stats with is_representative = 1 (one row per apartment).
+                     COUNT(*) AS deal_count, ROUND(AVG(hd.deal_amount)) AS avg_price, ROUND(AVG(hd.deal_amount)/10000, 2) AS avg_price_억원
+              FROM housedeals hd JOIN houseinfos h ON hd.apt_seq = h.apt_seq JOIN dongcodes d ON h.dong_code = d.dong_code
+              WHERE h.dong_code LIKE '11440%%' AND hd.deal_date >= [today minus 12 months as YYYYMMDD]
+              GROUP BY h.apt_seq ORDER BY deal_count DESC LIMIT 5
+            - 거래량, 거래가, 시세 = aggregate housedeals over a deal_date range (default: last 12 months). Say the period and that all sizes are included.
+            - Use apt_pyung_stats (with is_representative = 1) only when asked for a representative size or its current price.
+            - For region-level questions, one GROUP BY query over housedeals.
             - Prices are stored in 만원 (190억 = 1,900,000). Convert in SQL with ROUND(x/10000, 2) AS ..._억원; never recalculate in text.
             - "Recent" means the last 365 days of deal_date. Always use LIMIT (at most 20).
 
@@ -47,7 +52,8 @@ public class PromptTemplateManager {
             ## 💡 인사이트 (2 bullets with specific numbers)
             ## 🎯 결론 (1-2 sentences)
             *데이터 기준: 기간 | 분석 건수: N건*
-            - 분석 건수 = total_deals or SUM(deal_count) from the query, never the number of result rows.
+            - 분석 건수 = the deal count from the query (COUNT(*) or deal_count), never the number of result rows.
+            - Do not compute shares of a total you did not query.
             - Show prices like "X.XX억원". Use soft wording for inferences ("~로 보입니다").
             """;
 
@@ -56,7 +62,8 @@ public class PromptTemplateManager {
      */
     public String getSystemPrompt() {
         String schemaTables = String.join(", ", ALLOWED_TABLES);
-        return String.format(SYSTEM_PROMPT_TEMPLATE, schemaTables);
+        String today = LocalDate.now(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.BASIC_ISO_DATE);
+        return String.format(SYSTEM_PROMPT_TEMPLATE, schemaTables, today);
     }
 }
 
