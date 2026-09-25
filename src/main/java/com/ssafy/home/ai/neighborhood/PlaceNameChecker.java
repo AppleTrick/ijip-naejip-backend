@@ -16,6 +16,11 @@ public final class PlaceNameChecker {
     /** 역으로 끝나지만 역 이름이 아닌 말 */
     private static final Set<String> NON_STATION_SUFFIXES = Set.of("지역", "구역", "영역", "권역", "광역", "전역", "무역", "해역", "역역");
 
+    /** 특정 장소가 아닌 일반 명사 */
+    private static final Set<String> GENERIC_WORDS = Set.of(
+            "지하철역", "전철역", "기차역", "인근역", "주변역", "환승역", "근처역", "가까운역",
+            "초등학교", "중학교", "고등학교", "인근초등학교", "주변초등학교");
+
     private PlaceNameChecker() {
     }
 
@@ -28,6 +33,9 @@ public final class PlaceNameChecker {
         while (matcher.find()) {
             String name = matcher.group(1);
             if (name.endsWith("역") && (name.length() < 3 || NON_STATION_SUFFIXES.stream().anyMatch(name::endsWith))) {
+                continue;
+            }
+            if (GENERIC_WORDS.contains(name)) {
                 continue;
             }
             if (!isKnown(name, knownNames)) {

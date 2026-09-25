@@ -75,6 +75,7 @@ class ApartmentFactsTest {
         assertThat(PlaceNameChecker.findUnknownPlaces("개포역(3호선)이 도보 5분, 개포초등학교가 옆에 있어요.", known))
                 .containsExactly("개포역", "개포초등학교");
         assertThat(PlaceNameChecker.findUnknownPlaces("이 지역은 주거지역이고 역세권이에요.", known)).isEmpty();
+        assertThat(PlaceNameChecker.findUnknownPlaces("가까운 지하철역은 마포역이고, 초등학교는 염리초등학교예요.", known)).isEmpty();
     }
 
     static ApartmentFacts sampleFacts() {
