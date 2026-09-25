@@ -3,7 +3,7 @@
 실거래가 약 395만 건 위에서 AI 채팅·지도 검색·분석 리포트를 제공하는 부동산 서비스의 백엔드입니다.
 
 - **환경**: Java 17 · Spring Boot 3.5.8
-- **전체 서비스 문서**: 상위 [../README.md](../README.md) · [아키텍처](../docs/ARCHITECTURE.md) · [기술 회고록](../docs/TECHNICAL_REPORT.md)
+- **전체 서비스 문서**: 상위 [프로젝트 허브](https://github.com/AppleTrick/ijip-naejip) · [아키텍처](https://github.com/AppleTrick/ijip-naejip/blob/main/docs/ARCHITECTURE.md) · [기술 회고록](https://github.com/AppleTrick/ijip-naejip/blob/main/docs/TECHNICAL_REPORT.md)
 
 ## 이 백엔드의 두 가지 핵심
 
@@ -37,7 +37,7 @@ Oracle Cloud 이전 직후 상세 조회가 최대 90초까지 걸렸습니다. 
 | 응답 | JSON 미압축 | gzip (85% 감소) |
 | 인프라 | 블록 볼륨 I/O가 NVMe 대비 47배 느림 | (원인 규명) |
 
-**결과**: 평형 지정 상세 API `~5초 → ~23ms`, 지도 마커 API `~540ms → ~140ms`. 상세는 [성능 개선 리포트](../docs/PERFORMANCE_REPORT_완료.md).
+**결과**: 평형 지정 상세 API `~5초 → ~23ms`, 지도 마커 API `~540ms → ~140ms`. 상세는 [성능 개선 리포트](https://github.com/AppleTrick/ijip-naejip/blob/main/docs/PERFORMANCE_REPORT.md).
 
 ## 기술 스택
 
@@ -49,7 +49,7 @@ Oracle Cloud 이전 직후 상세 조회가 최대 90초까지 걸렸습니다. 
 | Auth | Spring Security · JWT (Stateless) · Kakao/Google OAuth2 · Gmail SMTP |
 | Docs | Swagger (OpenAPI 3.0) · spring-dotenv |
 
-> **LLM 제공자 이력**: OpenAI(SSAFY 무료 토큰, gpt-4.1 계열) → 로컬 Ollama(gemma3, 당일 포기) → Groq(llama-4-scout → `openai/gpt-oss-120b`). 어느 교체에서도 Java 코드는 바꾸지 않았고, 의존성과 설정만 바꿨습니다. 배경은 [트러블슈팅 #8](../docs/TROUBLESHOOTING.md#8).
+> **LLM 제공자 이력**: OpenAI(SSAFY 무료 토큰, gpt-4.1 계열) → 로컬 Ollama(gemma3, 당일 포기) → Groq(llama-4-scout → `openai/gpt-oss-120b`). 어느 교체에서도 Java 코드는 바꾸지 않았고, 의존성과 설정만 바꿨습니다. 배경은 [트러블슈팅 #8](https://github.com/AppleTrick/ijip-naejip/blob/main/docs/TROUBLESHOOTING.md#8).
 
 ## 핵심 기능
 
