@@ -1,6 +1,9 @@
 package com.ssafy.home.ai.service.impl;
 
 import com.ssafy.home.ai.dto.ApartmentChatRequest;
+import com.ssafy.home.ai.dto.ApartmentComparison;
+import com.ssafy.home.ai.exception.AIUnavailableException;
+import com.ssafy.home.ai.neighborhood.ApartmentScorer;
 import com.ssafy.home.ai.neighborhood.ApartmentFactService;
 import com.ssafy.home.ai.neighborhood.ApartmentFacts;
 import com.ssafy.home.ai.neighborhood.ApartmentFacts.Spot;
@@ -16,7 +19,9 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * LLM은 학습 시점 이후의 시세·주변 시설을 모르므로, 사실은 전부 단지 정보 카드와 SQL 조회로 공급하고
@@ -29,6 +34,7 @@ public class ApartmentAiServiceImpl implements ApartmentAiService {
 
     private static final int MAX_HISTORY_TURNS = 4;
     private static final int MAX_TEXT_LENGTH = 1000;
+    private static final int MAX_COMPARE = 4;
 
     private static final String GROUNDING_RULES = """
             규칙:
@@ -96,6 +102,74 @@ public class ApartmentAiServiceImpl implements ApartmentAiService {
                 List.of(new SystemMessage(system), new UserMessage("이 단지의 입지 장점을 요약해 줘.")),
                 facts.placeNames());
         return answer != null ? answer : summarizeWithoutLlm(facts);
+    }
+
+    @Override
+    public ApartmentComparison.Response compare(List<String> aptSeqs) {
+        List<String> notes = new ArrayList<>();
+        List<String> targets = aptSeqs.stream().distinct().toList();
+        if (targets.size() > MAX_COMPARE) {
+            notes.add("비교는 " + MAX_COMPARE + "개 단지까지 합니다. 앞의 " + MAX_COMPARE + "개만 계산했습니다.");
+            targets = targets.subList(0, MAX_COMPARE);
+        }
+
+        List<ApartmentFacts> factsList = new ArrayList<>();
+        List<ApartmentComparison.Item> items = new ArrayList<>();
+        for (String aptSeq : targets) {
+            ApartmentFacts facts;
+            try {
+                facts = apartmentFactService.getFacts(aptSeq);
+            } catch (IllegalArgumentException e) {
+                notes.add(aptSeq + ": 단지 정보(좌표)가 없어 제외했습니다.");
+                continue;
+            }
+            ApartmentScorer.Scores s = ApartmentScorer.score(facts);
+            factsList.add(facts);
+            items.add(new ApartmentComparison.Item(facts.aptSeq(), facts.aptName(), s.transportation(), s.education(),
+                    s.convenience(), s.park(), s.priceTrend(), s.evidence()));
+        }
+        if (items.isEmpty()) {
+            return new ApartmentComparison.Response("비교할 수 있는 단지가 없습니다.", items, ApartmentScorer.METHOD, notes);
+        }
+
+        String summary;
+        try {
+            summary = summarizeComparison(factsList, items);
+        } catch (AIUnavailableException e) {
+            // 점수는 LLM 없이 계산했으므로 요약만 빠진 채로 돌려준다
+            summary = e.isRateLimited() ? "AI 사용량이 많아 요약을 만들지 못했어요. 점수와 근거는 아래와 같아요." : "AI 요약을 만들지 못했어요. 점수와 근거는 아래와 같아요.";
+        }
+        return new ApartmentComparison.Response(summary, items, ApartmentScorer.METHOD, notes);
+    }
+
+    private String summarizeComparison(List<ApartmentFacts> factsList, List<ApartmentComparison.Item> items) {
+        StringBuilder data = new StringBuilder();
+        Set<String> places = new LinkedHashSet<>();
+        for (int i = 0; i < factsList.size(); i++) {
+            ApartmentFacts facts = factsList.get(i);
+            ApartmentComparison.Item item = items.get(i);
+            places.addAll(facts.placeNames());
+            data.append("\n## ").append(facts.aptName()).append('\n').append(facts.toCardText()).append('\n')
+                    .append(String.format("[점수 0~10] 교통 %s, 교육시설 %s, 생활편의 %s, 공원 %s, 시세 흐름 %s%n",
+                            fmt(item.transportation()), fmt(item.education()), fmt(item.convenience()), fmt(item.park()), fmt(item.priceTrend())));
+        }
+
+        String system = """
+                너는 아파트 단지들을 비교해 설명하는 분석가다. 점수는 이미 코드로 계산돼 있다. 점수를 바꾸거나 새로 매기지 않는다.
+                %s
+                - 단지별 강점과 약점을 점수와 카드의 근거(이름·거리·개수·평당가)로 설명한다.
+                - 어느 단지가 "더 좋다"고 단정하지 말고, 어떤 우선순위(출퇴근, 아이 교육, 공원, 가격)에 어떤 단지가 맞는지로 정리한다.
+                - 한국어 마크다운, 단지별 2~3개 불릿 + 마지막에 우선순위별 한 줄 정리.
+
+                [비교 대상]%s
+                """.formatted(GROUNDING_RULES, data);
+
+        String answer = groundedLlm.answer(List.of(new SystemMessage(system), new UserMessage("이 단지들을 비교해 줘.")), places);
+        return answer != null ? answer : "근거에 없는 장소가 섞여 AI 요약을 표시하지 않았어요. 점수와 근거는 아래와 같아요.";
+    }
+
+    private static String fmt(Double score) {
+        return score == null ? "데이터 없음" : String.valueOf(score);
     }
 
     /** LLM 답변이 검사를 통과하지 못했을 때 카드만으로 만드는 요약 */

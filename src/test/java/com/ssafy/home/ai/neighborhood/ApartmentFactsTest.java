@@ -80,7 +80,7 @@ class ApartmentFactsTest {
 
     static ApartmentFacts sampleFacts() {
         DealSummary deals = new DealSummary(LocalDate.of(2025, 9, 25), LocalDate.of(2026, 9, 25),
-                70, 84456L, 5075L, "마포구", 2014, 6570L);
+                70, 84456L, 5075L, "마포구", 2014, 6570L, 33, 4958L);
         Nearby nearby = new Nearby(true,
                 List.of(new Spot("마포역", "5호선", 60), new Spot("공덕역", "공항철도·6호선", 683)),
                 List.of(new Spot("서울염리초등학교", "", 307)), List.of(), List.of(),

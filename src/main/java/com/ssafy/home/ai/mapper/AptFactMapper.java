@@ -31,6 +31,16 @@ public interface AptFactMapper {
             """)
     Map<String, Object> summarizeApartmentDeals(@Param("aptSeq") String aptSeq, @Param("sinceDate") int sinceDate);
 
+    /** 단지의 [fromDate, untilDate) 기간 평당가(만원) — 시세 흐름 비교용 */
+    @Select("""
+            SELECT COUNT(*) AS deal_count,
+                   ROUND(AVG(deal_amount / exclu_use_ar) * 3.3058) AS price_per_pyung
+            FROM housedeals
+            WHERE apt_seq = #{aptSeq} AND deal_date >= #{fromDate} AND deal_date < #{untilDate}
+            """)
+    Map<String, Object> summarizeApartmentDealsBetween(@Param("aptSeq") String aptSeq,
+                                                       @Param("fromDate") int fromDate, @Param("untilDate") int untilDate);
+
     /** 구·군(법정동 코드 앞 5자리)의 기간 내 거래 수, 평당가(만원) */
     @Select("""
             SELECT COUNT(*) AS deal_count,

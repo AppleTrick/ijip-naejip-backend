@@ -77,13 +77,16 @@ public class ApartmentFactService implements DisposableBean {
         LocalDate from = today.minusYears(1);
         int sinceDate = Integer.parseInt(from.format(DateTimeFormatter.BASIC_ISO_DATE));
         Map<String, Object> aptDeals = aptFactMapper.summarizeApartmentDeals(aptSeq, sinceDate);
+        int prevSinceDate = Integer.parseInt(from.minusYears(1).format(DateTimeFormatter.BASIC_ISO_DATE));
+        Map<String, Object> prevDeals = aptFactMapper.summarizeApartmentDealsBetween(aptSeq, prevSinceDate, sinceDate);
         String dongCode = nonNull(apt.get("dong_code"));
         Map<String, Object> gugunDeals = dongCode.length() >= 5
                 ? aptFactMapper.summarizeGugunDeals(dongCode.substring(0, 5), sinceDate)
                 : null;
         DealSummary deals = new DealSummary(from, today,
                 toLong(aptDeals, "deal_count", 0L), toLong(aptDeals, "avg_amount", null), toLong(aptDeals, "price_per_pyung", null),
-                nonNull(apt.get("gugun_name")), toLong(gugunDeals, "deal_count", 0L), toLong(gugunDeals, "price_per_pyung", null));
+                nonNull(apt.get("gugun_name")), toLong(gugunDeals, "deal_count", 0L), toLong(gugunDeals, "price_per_pyung", null),
+                toLong(prevDeals, "deal_count", 0L), toLong(prevDeals, "price_per_pyung", null));
 
         return new ApartmentFacts(aptSeq, nonNull(apt.get("apt_nm")), region,
                 apt.get("build_year") == null ? null : ((Number) apt.get("build_year")).intValue(),

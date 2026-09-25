@@ -1,6 +1,7 @@
 package com.ssafy.home.ai.controller;
 
 import com.ssafy.home.ai.dto.ApartmentChatRequest;
+import com.ssafy.home.ai.dto.ApartmentComparison;
 import com.ssafy.home.ai.dto.ParseFilterResponse;
 import com.ssafy.home.ai.exception.AIUnavailableException;
 import com.ssafy.home.ai.service.ApartmentAiService;
@@ -69,6 +70,15 @@ public class AIFeatureController {
             return ResponseEntity.badRequest().body(CommonResponse.fail("400", "aptSeq와 message가 필요합니다."));
         }
         return grounded(() -> apartmentAiService.chat(request));
+    }
+
+    @Operation(summary = "관심 단지 비교", description = "단지 정보 카드의 측정값으로 5개 축 점수(0~10)를 계산하고, 근거 기반 비교 요약을 붙입니다. 최대 4개")
+    @PostMapping("/comparison")
+    public ResponseEntity<CommonResponse<ApartmentComparison.Response>> compare(@RequestBody ApartmentComparison.Request request) {
+        if (request.aptSeqs() == null || request.aptSeqs().isEmpty()) {
+            return ResponseEntity.badRequest().body(CommonResponse.fail("400", "aptSeqs가 필요합니다."));
+        }
+        return ResponseEntity.ok(CommonResponse.success(apartmentAiService.compare(request.aptSeqs())));
     }
 
     private ResponseEntity<CommonResponse<String>> grounded(java.util.function.Supplier<String> call) {

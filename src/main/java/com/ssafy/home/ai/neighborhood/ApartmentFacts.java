@@ -29,7 +29,17 @@ public record ApartmentFacts(
 
     /** 최근 12개월 실거래 요약 (금액 단위: 만원) */
     public record DealSummary(LocalDate from, LocalDate to, long dealCount, Long avgAmount, Long pricePerPyung,
-                              String gugunName, long gugunDealCount, Long gugunPricePerPyung) {}
+                              String gugunName, long gugunDealCount, Long gugunPricePerPyung,
+                              long prevDealCount, Long prevPricePerPyung) {
+
+        /** 직전 1년 대비 평당가 변화율(%). 두 기간 중 하나라도 거래가 없으면 null */
+        public Double pricePerPyungChangePercent() {
+            if (pricePerPyung == null || prevPricePerPyung == null || prevPricePerPyung == 0 || dealCount == 0 || prevDealCount == 0) {
+                return null;
+            }
+            return (pricePerPyung - prevPricePerPyung) * 100.0 / prevPricePerPyung;
+        }
+    }
 
     /** 이름과 직선거리(m) */
     public record Spot(String name, String detail, int distance) {}
@@ -75,6 +85,11 @@ public record ApartmentFacts(
                 long diff = Math.round((deals.pricePerPyung() - deals.gugunPricePerPyung()) * 100.0 / deals.gugunPricePerPyung());
                 card.append(" (").append(deals.gugunName()).append(" 평당 ").append(manwon(deals.gugunPricePerPyung()))
                         .append(" 대비 ").append(Math.abs(diff)).append(diff >= 0 ? "% 높음)" : "% 낮음)");
+            }
+            Double change = deals.pricePerPyungChangePercent();
+            if (change != null) {
+                card.append(", 직전 1년 평당 ").append(manwon(deals.prevPricePerPyung()))
+                        .append(String.format(" 대비 %+.1f%%", change));
             }
         }
         card.append('\n');
