@@ -27,7 +27,14 @@ class SqlQueryValidatorTest {
             "SELECT * FROM houseinfos WHERE apt_nm LIKE '%from users%'",
             "SELECT * FROM houseinfos WHERE apt_seq IN (SELECT apt_seq FROM apt_pyung_stats WHERE pyung = 30)",
             "SELECT x.cnt FROM (SELECT COUNT(*) cnt FROM housedeals) x",
-            "SELECT * FROM dongcodes WHERE dong_name = 'O''Neil'"
+            "SELECT * FROM dongcodes WHERE dong_name = 'O''Neil'",
+            // FROM 서브쿼리의 SELECT 목록을 테이블로 오인하던 문제 (2026-09-27 운영 AI 채팅에서 거부됨)
+            "SELECT sub.apt_nm, sub.avg_price FROM ( SELECT h.apt_seq, h.apt_nm, ROUND(AVG(hd.deal_amount)) AS avg_price "
+                    + "FROM housedeals hd JOIN houseinfos h ON hd.apt_seq = h.apt_seq JOIN dongcodes d ON h.dong_code = d.dong_code "
+                    + "WHERE d.gugun_name = '송파구' GROUP BY h.apt_seq, h.apt_nm ) sub WHERE sub.avg_price BETWEEN 200000 AND 300000",
+            "SELECT * FROM (houseinfos) h",
+            "SELECT * FROM houseinfos h JOIN (SELECT apt_seq FROM apt_pyung_stats) p ON h.apt_seq = p.apt_seq",
+            "SELECT * FROM houseinfos h STRAIGHT_JOIN dongcodes d ON h.dong_code = d.dong_code"
     })
     void 허용_테이블에_대한_단일_SELECT는_통과한다(String sql) {
         assertThat(validator.rejectReason(sql)).isNull();
@@ -47,6 +54,12 @@ class SqlQueryValidatorTest {
             "SELECT * FROM houseinfos h JOIN ai_reports r ON 1 = 1",
             "SELECT * FROM houseinfos WHERE apt_seq IN (SELECT user_id FROM ai_reports)",
             "SELECT * FROM houseinfos, ai_reports",
+            // 서브쿼리 뒤·괄호 안에 숨긴 테이블
+            "SELECT * FROM (SELECT apt_seq FROM houseinfos) x, ai_reports",
+            "SELECT * FROM (ai_reports)",
+            "SELECT * FROM houseinfos h JOIN (ai_reports) r ON 1 = 1",
+            "SELECT * FROM houseinfos h JOIN (SELECT * FROM ai_reports) r ON 1 = 1",
+            "SELECT * FROM houseinfos h STRAIGHT_JOIN ai_reports r ON 1 = 1",
             // 부하·파일·잠금
             "SELECT SLEEP(30)",
             "SELECT BENCHMARK(100000000, MD5('a'))",
@@ -66,7 +79,35 @@ class SqlQueryValidatorTest {
             "   "
     })
     void 허용되지_않은_쿼리는_거부한다(String sql) {
-        assertThat(validator.rejectReason(sql)).isNotNull();
+        String reason = validator.rejectReason(sql);
+        assertThat(reason).isNotNull();
+        // 메트릭 라벨로 미리 등록된 유형 중 하나여야 한다
+        assertThat(SqlQueryValidator.REJECT_TYPES).contains(reason.split(":")[0]);
+    }
+
+    @Test
+    void 운영에서_잘못_거부된_FROM_서브쿼리는_통과한다() {
+        // 2026-09-27 "송파구 20억~30억 아파트 추천" 질문에 모델이 만든 쿼리 원문 — 서브쿼리 SELECT 목록의 h.apt_nm을 테이블로 오인해 거부했다
+        String sql = """
+                SELECT sub.apt_seq, sub.apt_nm, sub.dong_code, sub.sido_name, sub.gugun_name, sub.dong_name, sub.latitude, sub.longitude,
+                       sub.deal_count, sub.avg_price, sub.avg_price_억원
+                FROM (
+                  SELECT h.apt_seq, h.apt_nm, h.dong_code, d.sido_name, d.gugun_name, d.dong_name, h.latitude, h.longitude,
+                         COUNT(*) AS deal_count,
+                         ROUND(AVG(hd.deal_amount)) AS avg_price,
+                         ROUND(AVG(hd.deal_amount)/10000, 2) AS avg_price_억원
+                  FROM housedeals hd
+                  JOIN houseinfos h ON hd.apt_seq = h.apt_seq
+                  JOIN dongcodes d ON h.dong_code = d.dong_code
+                  WHERE h.dong_code LIKE '117101%'
+                    AND hd.deal_date >= 20250927
+                  GROUP BY h.apt_seq
+                ) sub
+                WHERE sub.avg_price_억원 BETWEEN 20 AND 30
+                ORDER BY sub.deal_count DESC
+                LIMIT 20;
+                """;
+        assertThat(validator.rejectReason(sql)).isNull();
     }
 
     @Test

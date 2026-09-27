@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,6 +19,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AIConfig {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    /** ijip.ai.llm.requests의 outcome 라벨 값 */
+    static final List<String> LLM_OUTCOMES = List.of("success", "rate_limited", "error", "io_error");
 
     /** 제공자·모델별 남은 한도 (Gauge는 참조가 살아 있어야 값이 유지된다) */
     private final Map<String, AtomicLong> rateLimitRemaining = new ConcurrentHashMap<>();

@@ -63,6 +63,9 @@ public class GroundedLlm {
     }
 
     /** 근거 검사 결과: passed / passed_after_retry(1회 재생성 후 통과) / discarded(폐기) */
+    public static final List<String> GROUNDING_RESULTS = List.of("passed", "passed_after_retry", "discarded");
+
+    /** 근거 검사 결과: passed / passed_after_retry(1회 재생성 후 통과) / discarded(폐기) */
     private void countGrounding(String result) {
         meterRegistry.counter("ijip.ai.grounding", "result", result).increment();
     }

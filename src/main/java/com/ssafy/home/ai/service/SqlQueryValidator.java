@@ -23,6 +23,11 @@ public class SqlQueryValidator {
             "dongcodes", "houseinfos", "housedeals",
             "apt_dong_stats", "apt_pyung_stats", "apt_dong_pyung_stats");
 
+    /** 거부 사유의 유형 (": " 앞부분) — 메트릭 라벨로 쓰이고, 기동 시 0으로 미리 등록된다 */
+    public static final List<String> REJECT_TYPES = List.of(
+            "empty query", "only SELECT statements are allowed", "multiple statements are not allowed",
+            "comments are not allowed", "forbidden keyword", "table not allowed");
+
     private static final String ALLOWED_SCHEMA = "ijip_db";
 
     private static final Pattern STRING_LITERAL = Pattern.compile("'(?:[^'\\\\]|\\\\.|'')*'|\"(?:[^\"\\\\]|\\\\.|\"\")*\"");
@@ -34,11 +39,15 @@ public class SqlQueryValidator {
                     + "|INFORMATION_SCHEMA|PERFORMANCE_SCHEMA|MYSQL|SYS)\\b|@@",
             Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern FROM_CLAUSE = Pattern.compile(
-            "\\bFROM\\s+(.+?)(?=\\b(?:WHERE|GROUP|ORDER|LIMIT|HAVING|JOIN|INNER|LEFT|RIGHT|CROSS|STRAIGHT_JOIN|UNION|WINDOW)\\b|\\)|$)",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    /** 뒤에 테이블 목록이 오는 키워드 */
+    private static final Pattern TABLE_LIST_KEYWORD = Pattern.compile("\\b(?:FROM|STRAIGHT_JOIN|JOIN)\\b", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern JOIN_TARGET = Pattern.compile("\\bJOIN\\s+([^\\s,()]+)", Pattern.CASE_INSENSITIVE);
+    /** 테이블 목록이 끝났음을 알리는 키워드 (별칭과 구분) */
+    private static final Pattern CLAUSE_KEYWORD = Pattern.compile(
+            "(?i)WHERE|GROUP|ORDER|LIMIT|HAVING|JOIN|INNER|LEFT|RIGHT|OUTER|CROSS|STRAIGHT_JOIN|NATURAL|UNION|WINDOW"
+                    + "|ON|USING|USE|FORCE|IGNORE|PARTITION|FOR|LOCK|INTO");
+
+    private static final Pattern SUBQUERY_START = Pattern.compile("(?i)SELECT\\b");
 
     /** FROM을 문법으로 쓰는 함수 — EXTRACT(YEAR FROM deal_date) 등의 FROM은 테이블 참조가 아니다 */
     private static final Pattern FROM_FUNCTION = Pattern.compile("(?i)(EXTRACT|TRIM|SUBSTRING|SUBSTR|MID)\\s*$");
@@ -89,28 +98,97 @@ public class SqlQueryValidator {
         return null;
     }
 
+    /**
+     * FROM·JOIN 뒤의 테이블 참조를 모두 모은다.
+     * 서브쿼리 `(SELECT ...)`는 괄호 짝을 맞춰 통째로 건너뛰고(안쪽 FROM은 이 반복문이 따로 검사),
+     * 그 뒤의 `, 다른테이블`까지 계속 읽는다.
+     */
     private List<String> referencedTables(String sql) {
         List<String> tables = new ArrayList<>();
-
-        Matcher from = FROM_CLAUSE.matcher(sql);
-        while (from.find()) {
-            if (isFunctionArgument(sql, from.start())) {
+        Matcher keyword = TABLE_LIST_KEYWORD.matcher(sql);
+        while (keyword.find()) {
+            if (isFunctionArgument(sql, keyword.start())) {
                 continue;
             }
-            for (String item : from.group(1).split(",")) {
-                String trimmed = item.trim();
-                if (trimmed.isEmpty() || trimmed.startsWith("(")) {
-                    continue; // 서브쿼리 — 내부 FROM이 따로 검사된다
-                }
-                tables.add(trimmed.split("\\s+")[0]);
-            }
-        }
-
-        Matcher join = JOIN_TARGET.matcher(sql);
-        while (join.find()) {
-            tables.add(join.group(1));
+            collectTableList(sql.substring(keyword.end()), tables);
         }
         return tables;
+    }
+
+    /** "t1 a, (SELECT ...) b, (t2) c WHERE ..." 형태에서 테이블 이름만 모은다 */
+    private void collectTableList(String s, List<String> tables) {
+        int i = 0;
+        int n = s.length();
+        while (true) {
+            i = skipWhitespace(s, i);
+            if (i >= n) {
+                return;
+            }
+            if (s.charAt(i) == '(') {
+                int close = matchingParen(s, i);
+                if (close < 0) {
+                    return; // 괄호 불균형 — 문법 오류라 DB가 거부한다
+                }
+                String inner = s.substring(i + 1, close).trim();
+                if (!SUBQUERY_START.matcher(inner).lookingAt()) {
+                    collectTableList(inner, tables); // (houseinfos)처럼 괄호로 감싼 테이블 참조
+                }
+                i = close + 1;
+            } else {
+                int end = wordEnd(s, i);
+                tables.add(s.substring(i, end));
+                i = end;
+            }
+
+            // 별칭(AS x)을 건너뛰고, ','면 다음 항목, 절 키워드나 괄호면 목록 끝
+            while (true) {
+                i = skipWhitespace(s, i);
+                if (i >= n) {
+                    return;
+                }
+                char c = s.charAt(i);
+                if (c == ',') {
+                    i++;
+                    break;
+                }
+                if (c == '(' || c == ')') {
+                    return;
+                }
+                int end = wordEnd(s, i);
+                if (CLAUSE_KEYWORD.matcher(s.substring(i, end)).matches()) {
+                    return;
+                }
+                i = end;
+            }
+        }
+    }
+
+    private static int skipWhitespace(String s, int i) {
+        while (i < s.length() && Character.isWhitespace(s.charAt(i))) {
+            i++;
+        }
+        return i;
+    }
+
+    private static int wordEnd(String s, int i) {
+        while (i < s.length() && !Character.isWhitespace(s.charAt(i)) && ",()".indexOf(s.charAt(i)) < 0) {
+            i++;
+        }
+        return i;
+    }
+
+    /** open 위치의 '('와 짝인 ')' 위치 (없으면 -1) */
+    private static int matchingParen(String s, int open) {
+        int depth = 0;
+        for (int i = open; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && --depth == 0) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** 위치 앞의 가장 안쪽 미닫힘 괄호가 EXTRACT( 같은 함수 호출이면 true */
