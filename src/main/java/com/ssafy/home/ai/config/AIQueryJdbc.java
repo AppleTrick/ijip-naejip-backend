@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.observation.ObservationRegistry;
+import net.ttddyy.observation.boot.autoconfigure.DataSourceProxyConnectionIdManagerProvider;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 import net.ttddyy.observation.tracing.DataSourceObservationListener;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,8 @@ public class AIQueryJdbc implements DisposableBean {
 
     public AIQueryJdbc(DataSource applicationDataSource,
                        MeterRegistry meterRegistry,
-                       ObservationRegistry observationRegistry,
+                       DataSourceObservationListener observationListener,
+                       DataSourceProxyConnectionIdManagerProvider connectionIdManagerProvider,
                        @Value("${spring.datasource.url}") String url,
                        @Value("${ai.db.username:}") String username,
                        @Value("${ai.db.password:}") String password) {
@@ -56,8 +57,12 @@ public class AIQueryJdbc implements DisposableBean {
             // 빈이 아닌 풀이라 자동 계측이 안 붙는다 → 커넥션 풀 메트릭(hikaricp_*{pool="ai-readonly"})과 쿼리 스팬을 직접 연결
             config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(meterRegistry));
             readOnlyDataSource = new HikariDataSource(config);
+            // 자동 설정과 같은 조합: 쿼리 리스너 + 커넥션 획득 리스너(methodListener) + 전역 커넥션 ID.
+            // methodListener가 빠지면 쿼리 관측에 DataSource가 비어 HikariJdbcObservationFilter가 NPE → 모든 AI 쿼리 실패
             dataSource = ProxyDataSourceBuilder.create("ai-readonly", readOnlyDataSource)
-                    .listener(new DataSourceObservationListener(observationRegistry))
+                    .listener(observationListener)
+                    .methodListener(observationListener)
+                    .connectionIdManager(connectionIdManagerProvider.get())
                     .build();
             log.info("AI SQL 실행 계정: {} (읽기 전용 풀)", username);
         }
