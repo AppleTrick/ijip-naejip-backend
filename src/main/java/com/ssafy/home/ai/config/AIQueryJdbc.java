@@ -2,6 +2,11 @@ package com.ssafy.home.ai.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
+import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
+import net.ttddyy.observation.tracing.DataSourceObservationListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +33,8 @@ public class AIQueryJdbc implements DisposableBean {
     private final HikariDataSource readOnlyDataSource;
 
     public AIQueryJdbc(DataSource applicationDataSource,
+                       MeterRegistry meterRegistry,
+                       ObservationRegistry observationRegistry,
                        @Value("${spring.datasource.url}") String url,
                        @Value("${ai.db.username:}") String username,
                        @Value("${ai.db.password:}") String password) {
@@ -46,8 +53,12 @@ public class AIQueryJdbc implements DisposableBean {
             config.setReadOnly(true);
             // JDBC 타임아웃과 별개로 MySQL 서버에서도 5초 넘는 SELECT를 중단
             config.setConnectionInitSql("SET SESSION MAX_EXECUTION_TIME=" + QUERY_TIMEOUT_SECONDS * 1000);
+            // 빈이 아닌 풀이라 자동 계측이 안 붙는다 → 커넥션 풀 메트릭(hikaricp_*{pool="ai-readonly"})과 쿼리 스팬을 직접 연결
+            config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(meterRegistry));
             readOnlyDataSource = new HikariDataSource(config);
-            dataSource = readOnlyDataSource;
+            dataSource = ProxyDataSourceBuilder.create("ai-readonly", readOnlyDataSource)
+                    .listener(new DataSourceObservationListener(observationRegistry))
+                    .build();
             log.info("AI SQL 실행 계정: {} (읽기 전용 풀)", username);
         }
 

@@ -35,6 +35,11 @@ dependencyManagement {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+	// 분산 트레이싱 (관측성 4단계): Micrometer Tracing → OpenTelemetry → OTLP → Tempo
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+	// JDBC 쿼리를 스팬으로 (Spring Boot 3 계열은 1.x)
+	implementation 'net.ttddyy.observation:datasource-micrometer-spring-boot:1.5.0'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'

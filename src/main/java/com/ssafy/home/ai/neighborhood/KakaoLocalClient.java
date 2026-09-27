@@ -1,6 +1,7 @@
 package com.ssafy.home.ai.neighborhood;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -27,7 +28,7 @@ public class KakaoLocalClient {
     private final RestClient restClient;
     private final boolean enabled;
 
-    public KakaoLocalClient(@Value("${kakao.rest-api-key:}") String restApiKey) {
+    public KakaoLocalClient(@Value("${kakao.rest-api-key:}") String restApiKey, ObservationRegistry observationRegistry) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(3000);
         requestFactory.setReadTimeout(3000);
@@ -35,6 +36,7 @@ public class KakaoLocalClient {
                 .baseUrl("https://dapi.kakao.com/v2/local/search")
                 .defaultHeader("Authorization", "KakaoAK " + restApiKey)
                 .requestFactory(requestFactory)
+                .observationRegistry(observationRegistry)   // 카카오 호출 구간을 메트릭·트레이스로
                 .build();
         this.enabled = !restApiKey.isBlank();
         if (!enabled) {

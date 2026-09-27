@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.ssafy.home.ai.config.AIQueryJdbc;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
     private final AIQueryJdbc aiQueryJdbc;
     private final SqlQueryValidator sqlQueryValidator;
     private final QueryResultCollector queryResultCollector;
+    private final MeterRegistry meterRegistry;
 
     /**
      * AI가 SQL 쿼리를 실행하기 위한 요청
@@ -66,6 +68,8 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
         String rejectReason = sqlQueryValidator.rejectReason(sql);
         if (rejectReason != null) {
             log.warn("Unsafe query rejected ({}): {}", rejectReason, sql);
+            // 라벨은 거부 유형만 (": " 뒤의 테이블명·키워드는 값이 다양해 라벨로 쓰지 않는다)
+            meterRegistry.counter("ijip.ai.sql.rejections", "reason", rejectReason.split(":")[0]).increment();
             return new QueryResponse(
                     false,
                     "Query rejected (" + rejectReason + "). Only a single SELECT on allowed tables is permitted: "

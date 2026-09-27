@@ -6,6 +6,11 @@ import com.ssafy.home.ai.neighborhood.ApartmentFacts.Nearby;
 import com.ssafy.home.ai.neighborhood.ApartmentFacts.Spot;
 import com.ssafy.home.ai.neighborhood.KakaoLocalClient.Place;
 import com.ssafy.home.ai.neighborhood.KakaoLocalClient.SearchResult;
+import io.micrometer.context.ContextExecutorService;
+import io.micrometer.context.ContextSnapshotFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Service;
@@ -35,7 +40,9 @@ public class ApartmentFactService implements DisposableBean {
 
     private final AptFactMapper aptFactMapper;
     private final KakaoLocalClient kakao;
-    private final ExecutorService executor = Executors.newFixedThreadPool(6);
+    // 병렬 카카오 호출 스레드로 트레이스 문맥을 넘겨, 7개 호출이 요청 트레이스의 자식 스팬으로 잡히게 한다
+    private final ExecutorService executor = ContextExecutorService.wrap(
+            Executors.newFixedThreadPool(6), ContextSnapshotFactory.builder().build());
 
     private record CacheEntry(ApartmentFacts facts, Instant createdAt) {}
 
@@ -46,7 +53,13 @@ public class ApartmentFactService implements DisposableBean {
         }
     });
 
-    public ApartmentFactService(AptFactMapper aptFactMapper, KakaoLocalClient kakao) {
+    private final MeterRegistry meterRegistry;
+    private final ObservationRegistry observationRegistry;
+
+    public ApartmentFactService(AptFactMapper aptFactMapper, KakaoLocalClient kakao,
+                                MeterRegistry meterRegistry, ObservationRegistry observationRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.observationRegistry = observationRegistry;
         this.aptFactMapper = aptFactMapper;
         this.kakao = kakao;
     }
@@ -57,9 +70,13 @@ public class ApartmentFactService implements DisposableBean {
     public ApartmentFacts getFacts(String aptSeq) {
         CacheEntry cached = cache.get(aptSeq);
         if (cached != null && cached.createdAt().plus(CACHE_TTL).isAfter(Instant.now())) {
+            meterRegistry.counter("ijip.ai.facts.cache", "result", "hit").increment();
             return cached.facts();
         }
-        ApartmentFacts facts = collect(aptSeq);
+        meterRegistry.counter("ijip.ai.facts.cache", "result", "miss").increment();
+        // 카드 생성(DB 조회 + 카카오 7회)을 하나의 구간으로 — 트레이스 스팬과 ijip_ai_facts_collect_seconds 타이머
+        ApartmentFacts facts = Observation.createNotStarted("ijip.ai.facts.collect", observationRegistry)
+                .observe(() -> collect(aptSeq));
         cache.put(aptSeq, new CacheEntry(facts, Instant.now()));
         return facts;
     }

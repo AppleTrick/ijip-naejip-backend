@@ -2,6 +2,7 @@ package com.ssafy.home.ai.service;
 
 import com.ssafy.home.ai.exception.AIUnavailableException;
 import com.ssafy.home.ai.neighborhood.PlaceNameChecker;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -27,6 +28,7 @@ import java.util.Set;
 public class GroundedLlm {
 
     private final ChatClient.Builder chatClientBuilder;
+    private final MeterRegistry meterRegistry;
 
     @Value("${ai.chat.fallback-model:openai/gpt-oss-20b}")
     private String fallbackModel;
@@ -41,6 +43,7 @@ public class GroundedLlm {
         String answer = call(messages, functionNames);
         Set<String> unknown = PlaceNameChecker.findUnknownPlaces(answer, knownPlaces);
         if (unknown.isEmpty()) {
+            countGrounding("passed");
             return answer;
         }
 
@@ -51,10 +54,17 @@ public class GroundedLlm {
         String retried = call(retry, functionNames);
         Set<String> stillUnknown = PlaceNameChecker.findUnknownPlaces(retried, knownPlaces);
         if (stillUnknown.isEmpty()) {
+            countGrounding("passed_after_retry");
             return retried;
         }
         log.warn("재생성 후에도 근거에 없는 장소 언급 {} — 답변 폐기", stillUnknown);
+        countGrounding("discarded");
         return null;
+    }
+
+    /** 근거 검사 결과: passed / passed_after_retry(1회 재생성 후 통과) / discarded(폐기) */
+    private void countGrounding(String result) {
+        meterRegistry.counter("ijip.ai.grounding", "result", result).increment();
     }
 
     private String call(List<Message> messages, String... functionNames) {
