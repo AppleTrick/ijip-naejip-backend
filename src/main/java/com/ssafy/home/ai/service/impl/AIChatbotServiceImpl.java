@@ -48,6 +48,7 @@ public class AIChatbotServiceImpl implements AIChatbotService {
         try {
             // 이전 요청의 결과 초기화
             queryResultCollector.clear();
+            queryResultCollector.setQuestion(userMessage);
 
             // 1. 사용자 메시지에서 지역명 추출 및 검증
             log.info("Validating regions in user message: {}", userMessage);
@@ -76,6 +77,7 @@ public class AIChatbotServiceImpl implements AIChatbotService {
                 }
                 log.warn("기본 모델 한도 초과 — {}로 재시도", fallbackModel);
                 queryResultCollector.clear();
+                queryResultCollector.setQuestion(userMessage);
                 response = ask(systemPrompt, userMessage, fallbackModel);
             }
 

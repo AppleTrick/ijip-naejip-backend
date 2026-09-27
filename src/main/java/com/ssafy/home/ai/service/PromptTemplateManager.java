@@ -43,6 +43,8 @@ public class PromptTemplateManager {
             - Use apt_pyung_stats (with is_representative = 1) only when asked for a representative size or its current price.
             - For region-level questions, one GROUP BY query over housedeals.
             - Prices are stored in 만원 (190억 = 1,900,000). Convert in SQL with ROUND(x/10000, 2) AS ..._억원; never recalculate in text.
+            - Price filters: never convert 억 to 만원 yourself. Write N억 as N * 10000 (hd.deal_amount BETWEEN 20 * 10000 AND 30 * 10000)
+              or compare the _억원 expression with N (HAVING avg_price_억원 BETWEEN 20 AND 30).
             - "Recent" means the last 365 days of deal_date. Always use LIMIT (at most 20).
 
             ## Answer (Korean Markdown, concise)

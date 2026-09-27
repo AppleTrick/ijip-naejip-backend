@@ -1,6 +1,7 @@
 package com.ssafy.home.ai.config;
 
 import com.ssafy.home.ai.service.GroundedLlm;
+import com.ssafy.home.ai.service.PriceUnitChecker;
 import com.ssafy.home.ai.service.SqlQueryValidator;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ public class AiMetricsInitializer {
         }
         GroundedLlm.GROUNDING_RESULTS.forEach(r -> registry.counter("ijip.ai.grounding", "result", r));
         SqlQueryValidator.REJECT_TYPES.forEach(r -> registry.counter("ijip.ai.sql.rejections", "reason", r));
+        registry.counter("ijip.ai.sql.rejections", "reason", PriceUnitChecker.REJECT_TYPE);
         List.of("hit", "miss").forEach(r -> registry.counter("ijip.ai.facts.cache", "result", r));
     }
 }

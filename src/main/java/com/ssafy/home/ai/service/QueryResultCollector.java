@@ -16,6 +16,17 @@ public class QueryResultCollector {
 
     private final ThreadLocal<List<Map<String, Object>>> sampleApartmentsHolder = ThreadLocal.withInitial(ArrayList::new);
 
+    /** 이번 요청의 사용자 질문 — 도구가 SQL의 가격 단위를 질문과 대조할 때 쓴다 */
+    private final ThreadLocal<String> questionHolder = new ThreadLocal<>();
+
+    public void setQuestion(String question) {
+        questionHolder.set(question);
+    }
+
+    public String getQuestion() {
+        return questionHolder.get();
+    }
+
     /**
      * 샘플 아파트 데이터 저장
      */
@@ -49,6 +60,7 @@ public class QueryResultCollector {
      */
     public void clear() {
         sampleApartmentsHolder.remove();
+        questionHolder.remove();
     }
 
     /**

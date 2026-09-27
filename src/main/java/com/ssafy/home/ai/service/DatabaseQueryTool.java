@@ -66,14 +66,19 @@ public class DatabaseQueryTool implements Function<DatabaseQueryTool.QueryReques
 
         // 보안 검증
         String rejectReason = sqlQueryValidator.rejectReason(sql);
+        if (rejectReason == null) {
+            rejectReason = PriceUnitChecker.check(queryResultCollector.getQuestion(), sql);
+        }
         if (rejectReason != null) {
             log.warn("Unsafe query rejected ({}): {}", rejectReason, sql);
             // 라벨은 거부 유형만 (": " 뒤의 테이블명·키워드는 값이 다양해 라벨로 쓰지 않는다)
             meterRegistry.counter("ijip.ai.sql.rejections", "reason", rejectReason.split(":")[0]).increment();
+            String guide = rejectReason.startsWith(PriceUnitChecker.REJECT_TYPE)
+                    ? "Fix the price condition and call the tool again."
+                    : "Only a single SELECT on allowed tables is permitted: " + SqlQueryValidator.ALLOWED_TABLES;
             return new QueryResponse(
                     false,
-                    "Query rejected (" + rejectReason + "). Only a single SELECT on allowed tables is permitted: "
-                            + SqlQueryValidator.ALLOWED_TABLES,
+                    "Query rejected (" + rejectReason + "). " + guide,
                     Collections.emptyList(),
                     "unknown"
             );
